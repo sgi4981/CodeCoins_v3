@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCoins — Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --brand-500: #328AB5;
+            --brand-600: #156EB5;
+            --brand-700: #125C96;
+            --brand-800: #0F4B79;
+            --brand-900: #0D2B45;
+            --accent-400: #33D8AF;
+            --accent-500: #12C59A;
+            --neutral-50:  #F6F8F8;
+            --neutral-200: #DCE3E6;
+            --neutral-400: #AAB4BC;
+            --neutral-600: #64748B;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --r-xl:  0.75rem;
+            --r-2xl: 1rem;
+            --r-3xl: 1.5rem;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #F6F8F8;
+            font-family: 'Nunito Sans', sans-serif;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 260px;
+            background: radial-gradient(ellipse at 50% 0%, rgba(21,110,181,0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #floating-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .float-icon {
+            position: absolute;
+            animation: floatUp linear infinite;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        @keyframes floatUp {
+            0%   { transform: translateY(100vh)  translateX(0px)   rotate(0deg);   opacity: 0; }
+            8%   { opacity: 1; }
+            25%  { transform: translateY(72vh)   translateX(18px)  rotate(90deg); }
+            50%  { transform: translateY(48vh)   translateX(-14px) rotate(180deg); }
+            75%  { transform: translateY(24vh)   translateX(16px)  rotate(270deg); }
+            92%  { opacity: 0.35; }
+            100% { transform: translateY(-120px) translateX(0px)   rotate(360deg); opacity: 0; }
+        }
+
+        /* ── Lock screen ── */
+        #lockScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7,20,35,0.92);
+            backdrop-filter: blur(4px);
+        }
+
+        .lock-card {
+            background: var(--brand-800);
+            border: 1px solid rgba(127,196,255,0.2);
+            border-radius: var(--r-3xl);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            padding: 48px 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 92%;
+            animation: slideUp 0.35s var(--ease);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .lock-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; }
+
+        .lock-card h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--neutral-50);
+            margin-bottom: 8px;
+        }
+
+        .lock-card p {
+            color: var(--neutral-400);
+            font-size: 0.95rem;
+            margin-bottom: 28px;
+        }
+
+        .lock-card input {
+            width: 100%;
+            padding: 12px 18px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: var(--r-xl);
+            color: #FFF;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            margin-bottom: 14px;
+            letter-spacing: 4px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .lock-card input:focus {
+            border-color: var(--accent-500);
+            box-shadow: 0 0 0 3px rgba(18,197,154,0.2);
+        }
+
+        .lock-card input.shake { animation: shake 0.4s ease; border-color: #EF4444; }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%,60% { transform: translateX(-8px); }
+            40%,80% { transform: translateX(8px); }
+        }
+
+        .lock-error {
+            color: #FCA5A5;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            min-height: 22px;
+        }
+
+        /* ── Page content ── */
+        #pageContent { display: none; }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header { text-align: center; padding: 48px 0 20px; }
+
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+            font-weight: 700;
+            color: var(--neutral-50);
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: var(--accent-400);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .mc-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(127,196,255,0.3), transparent);
+            margin: 24px 0;
+        }
+
+        /* ── Nav ── */
+        .nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .nav a {
+            padding: 10px 24px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #64748B;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            box-shadow: 0 1px 3px rgba(13,43,69,0.06);
+            transition: all 0.2s var(--ease);
+        }
+
+        .nav a.active, .nav a:hover {
+            background: var(--brand-600);
+            border-color: var(--brand-500);
+            color: #FFF;
+            box-shadow: 0 4px 14px rgba(21,110,181,0.4);
+        }
+
+        /* ── Tabs ── */
+        .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+
+        .tab-btn {
+            padding: 10px 22px;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            color: #64748B;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(13,43,69,0.06);
+            transition: all 0.2s var(--ease);
+        }
+
+        .tab-btn.active, .tab-btn:hover {
+            background: var(--brand-600);
+            border-color: var(--brand-500);
+            color: #FFF;
+            box-shadow: 0 4px 14px rgba(21,110,181,0.4);
+        }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; }
+
+        /* ── Cards ── */
+        .card {
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-2xl);
+            box-shadow: 0 10px 30px rgba(13,43,69,0.08);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-600);
+            margin-bottom: 20px;
+        }
+
+        /* ── Forms ── */
+        .form-row {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            flex: 1;
+            min-width: 160px;
+        }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--neutral-400);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px 14px;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            color: #1E293B;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input::placeholder { color: #AAB4BC; }
+        .form-group input:focus, .form-group select:focus {
+            border-color: var(--accent-500);
+            box-shadow: 0 0 0 3px rgba(18,197,154,0.15);
+        }
+
+        .form-group select option { background: #FFF; color: #1E293B; }
+
+        .btn {
+            padding: 11px 22px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: var(--r-xl);
+            transition: all 0.2s var(--ease);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--brand-600);
+            color: #FFF;
+            box-shadow: 0 4px 14px rgba(21,110,181,0.35);
+        }
+
+        .btn-primary:hover {
+            background: var(--brand-700);
+            box-shadow: 0 6px 20px rgba(21,110,181,0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger {
+            background: rgba(239,68,68,0.15);
+            color: #FCA5A5;
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: var(--r-xl);
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            padding: 7px 14px;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-danger:hover {
+            background: rgba(239,68,68,0.28);
+            border-color: rgba(239,68,68,0.5);
+        }
+
+        /* ── Item lists ── */
+        .item-list { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+
+        .item-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 18px;
+            background: #F6F8F8;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            transition: background 0.15s;
+        }
+
+        .item-row:hover { background: #EEF2F3; }
+
+        .item-info { display: flex; flex-direction: column; gap: 3px; }
+        .item-name { font-size: 1rem; font-weight: 600; color: #1E293B; }
+        .item-sub  { font-size: 0.85rem; color: #64748B; }
+
+        .points-pill {
+            padding: 4px 12px;
+            background: rgba(18,197,154,0.15);
+            border: 1px solid rgba(18,197,154,0.25);
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-400);
+            margin-right: 12px;
+            white-space: nowrap;
+        }
+
+        .empty-msg {
+            text-align: center;
+            padding: 24px;
+            color: #AAB4BC;
+            font-size: 0.9rem;
+        }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1E293B;
+            border: 1px solid #334155;
+            border-radius: var(--r-xl);
+            box-shadow: 0 10px 30px rgba(13,43,69,0.2);
+            color: #F6F8F8;
+            padding: 14px 28px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            z-index: 999;
+            transition: transform 0.3s var(--ease);
+            white-space: nowrap;
+        }
+
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        .footer {
+            text-align: center;
+            padding: 40px;
+            color: #AAB4BC;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+<div id="floating-bg"></div>
+
+<!-- Lock screen -->
+<div id="lockScreen">
+    <div class="lock-card">
+        <span class="lock-icon">🔐</span>
+        <h2>Admin Access</h2>
+        <p>Enter your password to continue</p>
+        <input type="password" id="pwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkPassword()">
+        <div class="lock-error" id="lockError"></div>
+        <button class="btn btn-primary" style="width:100%;padding:13px" onclick="checkPassword()">Unlock Access</button>
+    </div>
+</div>
+
+<!-- Page content -->
+<div id="pageContent">
+    <div class="container">
+        <div class="header">
+            <h1>⚙ Admin Panel</h1>
+            <div class="subtitle">*** Reference Data Management ***</div>
+        </div>
+
+        <div class="mc-divider"></div>
+
+        <nav class="nav">
+            <a href="index.html">🏆 Leaderboard</a>
+            <a href="admin.html" class="active">⚙ Admin</a>
+            <a href="staff.html">📜 Staff</a>
+        </nav>
+
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('students', this)">👤 Students</button>
+            <button class="tab-btn" onclick="switchTab('senseis', this)">🥋 Senseis</button>
+            <button class="tab-btn" onclick="switchTab('activities', this)">⚡ Activities</button>
+        </div>
+
+        <!-- Students -->
+        <div id="tab-students" class="tab-panel active">
+            <div class="card">
+                <h3>[ Add Student ]</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" id="newStudentName" placeholder="e.g. Alex Carter">
+                    </div>
+                    <div class="form-group">
+                        <label>Sensei</label>
+                        <select id="newStudentSensei"></select>
+                    </div>
+                    <button class="btn btn-primary" onclick="addStudent()">+ Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>[ All Students ]</h3>
+                <div class="item-list" id="studentList"></div>
+            </div>
+        </div>
+
+        <!-- Senseis -->
+        <div id="tab-senseis" class="tab-panel">
+            <div class="card">
+                <h3>[ Add Sensei ]</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Sensei Name</label>
+                        <input type="text" id="newSenseiName" placeholder="e.g. Sensei Rivera">
+                    </div>
+                    <button class="btn btn-primary" onclick="addSensei()">+ Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>[ All Senseis ]</h3>
+                <div class="item-list" id="senseiList"></div>
+            </div>
+        </div>
+
+        <!-- Activities -->
+        <div id="tab-activities" class="tab-panel">
+            <div class="card">
+                <h3>[ Add Activity ]</h3>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Activity Name</label>
+                        <input type="text" id="newActivityName" placeholder="e.g. Perfect Score">
+                    </div>
+                    <div class="form-group" style="max-width:150px">
+                        <label>Points</label>
+                        <input type="number" id="newActivityPoints" placeholder="25" min="1">
+                    </div>
+                    <button class="btn btn-primary" onclick="addActivity()">+ Add</button>
+                </div>
+            </div>
+            <div class="card">
+                <h3>[ All Activities ]</h3>
+                <div class="item-list" id="activityList"></div>
+            </div>
+        </div>
+
+        <div class="footer">Keep the data clean, Sensei!</div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    async function loadFloatIcons() {
+        try {
+            const res = await fetch('Assets/FloatingIconAssets/');
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const imgs = [...doc.querySelectorAll('a[href]')]
+                .map(a => a.getAttribute('href'))
+                .filter(h => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(h))
+                .map(h => 'Assets/FloatingIconAssets/' + h.replace(/^.*\//, ''));
+            if (imgs.length) return imgs;
+        } catch (_) {}
+        return ['Assets/FloatingIconAssets/Mahad1.png', 'Assets/FloatingIconAssets/Mahad2.png'];
+    }
+    async function createFloaters() {
+        const icons = await loadFloatIcons();
+        const bg = document.getElementById('floating-bg');
+        for (let i = 0; i < 24; i++) {
+            const el = document.createElement('img');
+            el.className = 'float-icon';
+            el.src = icons[Math.floor(Math.random() * icons.length)];
+            el.alt = '';
+            el.style.cssText = `left:${Math.random()*100}vw;width:${Math.random()*24+32}px;animation-duration:${Math.random()*20+32}s;animation-delay:${Math.random()*22}s;opacity:${Math.random()*0.25+0.08};`;
+            bg.appendChild(el);
+        }
+    }
+
+    const PASSWORD = 'Milton123';
+    function checkPassword() {
+        const val = document.getElementById('pwdInput').value;
+        if (val === PASSWORD) {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('pageContent').style.display = 'block';
+            renderAll();
+        } else {
+            const input = document.getElementById('pwdInput');
+            document.getElementById('lockError').textContent = 'Wrong password! Try again.';
+            input.classList.add('shake');
+            input.value = '';
+            setTimeout(() => input.classList.remove('shake'), 500);
+        }
+    }
+
+    const LS = {
+        get: k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } },
+        set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+    };
+    const genId = () => '_' + Math.random().toString(36).slice(2, 9);
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2500);
+    }
+
+    function switchTab(name, btn) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('tab-' + name).classList.add('active');
+        btn.classList.add('active');
+        renderAll();
+    }
+
+    function renderAll() {
+        renderStudents();
+        renderSenseis();
+        renderActivities();
+        populateSenseiDropdown();
+    }
+
+    function populateSenseiDropdown() {
+        const sel = document.getElementById('newStudentSensei');
+        const senseis = LS.get('cc_senseis');
+        sel.innerHTML = senseis.length
+            ? senseis.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
+            : '<option value="">-- No senseis yet --</option>';
+    }
+
+    function renderStudents() {
+        const students = LS.get('cc_students');
+        const senseis  = LS.get('cc_senseis');
+        const el = document.getElementById('studentList');
+        if (!students.length) { el.innerHTML = '<div class="empty-msg">No students yet...</div>'; return; }
+        el.innerHTML = students.map(s => {
+            const sensei = senseis.find(se => se.id === s.senseiId);
+            return `<div class="item-row">
+                <div class="item-info">
+                    <span class="item-name">👤 ${s.name}</span>
+                    <span class="item-sub">Sensei: ${sensei?.name || 'Unassigned'}</span>
+                </div>
+                <button class="btn btn-danger" onclick="deleteStudent('${s.id}')">🗑 Remove</button>
+            </div>`;
+        }).join('');
+    }
+
+    function renderSenseis() {
+        const senseis = LS.get('cc_senseis');
+        const el = document.getElementById('senseiList');
+        if (!senseis.length) { el.innerHTML = '<div class="empty-msg">No senseis yet...</div>'; return; }
+        el.innerHTML = senseis.map(s => `
+            <div class="item-row">
+                <div class="item-info"><span class="item-name">🥋 ${s.name}</span></div>
+                <button class="btn btn-danger" onclick="deleteSensei('${s.id}')">🗑 Remove</button>
+            </div>`).join('');
+    }
+
+    function renderActivities() {
+        const activities = LS.get('cc_activities');
+        const el = document.getElementById('activityList');
+        if (!activities.length) { el.innerHTML = '<div class="empty-msg">No activities yet...</div>'; return; }
+        el.innerHTML = activities.map(a => `
+            <div class="item-row">
+                <div style="display:flex;align-items:center;gap:10px;flex:1">
+                    <span class="points-pill">+${a.points} pts</span>
+                    <div class="item-info"><span class="item-name">⚡ ${a.name}</span></div>
+                </div>
+                <button class="btn btn-danger" onclick="deleteActivity('${a.id}')">🗑 Remove</button>
+            </div>`).join('');
+    }
+
+    function addStudent() {
+        const name = document.getElementById('newStudentName').value.trim();
+        const senseiId = document.getElementById('newStudentSensei').value;
+        if (!name) { toast('Enter a student name!'); return; }
+        const students = LS.get('cc_students');
+        students.push({ id: genId(), name, senseiId });
+        LS.set('cc_students', students);
+        document.getElementById('newStudentName').value = '';
+        toast('Student added!');
+        renderAll();
+    }
+
+    function deleteStudent(id) {
+        if (!confirm('Remove this student? Their history will remain.')) return;
+        LS.set('cc_students', LS.get('cc_students').filter(s => s.id !== id));
+        toast('Student removed.');
+        renderAll();
+    }
+
+    function addSensei() {
+        const name = document.getElementById('newSenseiName').value.trim();
+        if (!name) { toast('Enter a sensei name!'); return; }
+        const senseis = LS.get('cc_senseis');
+        senseis.push({ id: genId(), name });
+        LS.set('cc_senseis', senseis);
+        document.getElementById('newSenseiName').value = '';
+        toast('Sensei added!');
+        renderAll();
+    }
+
+    function deleteSensei(id) {
+        if (!confirm('Remove this sensei?')) return;
+        LS.set('cc_senseis', LS.get('cc_senseis').filter(s => s.id !== id));
+        toast('Sensei removed.');
+        renderAll();
+    }
+
+    function addActivity() {
+        const name   = document.getElementById('newActivityName').value.trim();
+        const points = parseInt(document.getElementById('newActivityPoints').value, 10);
+        if (!name)              { toast('Enter an activity name!'); return; }
+        if (!points || points < 1) { toast('Enter a valid points value!'); return; }
+        const activities = LS.get('cc_activities');
+        activities.push({ id: genId(), name, points });
+        LS.set('cc_activities', activities);
+        document.getElementById('newActivityName').value = '';
+        document.getElementById('newActivityPoints').value = '';
+        toast('Activity added!');
+        renderAll();
+    }
+
+    function deleteActivity(id) {
+        if (!confirm('Remove this activity?')) return;
+        LS.set('cc_activities', LS.get('cc_activities').filter(a => a.id !== id));
+        toast('Activity removed.');
+        renderAll();
+    }
+
+    createFloaters();
+</script>
+</body>
+</html>

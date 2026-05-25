@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeCoins — Staff</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700;800&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --brand-500: #328AB5;
+            --brand-600: #156EB5;
+            --brand-700: #125C96;
+            --brand-800: #0F4B79;
+            --brand-900: #0D2B45;
+            --accent-400: #33D8AF;
+            --accent-500: #12C59A;
+            --neutral-50:  #F6F8F8;
+            --neutral-200: #DCE3E6;
+            --neutral-400: #AAB4BC;
+            --neutral-600: #64748B;
+            --ease: cubic-bezier(0.4, 0, 0.2, 1);
+            --r-xl:  0.75rem;
+            --r-2xl: 1rem;
+            --r-3xl: 1.5rem;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #F6F8F8;
+            font-family: 'Nunito Sans', sans-serif;
+            color: #334155;
+            overflow-x: hidden;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 260px;
+            background: radial-gradient(ellipse at 50% 0%, rgba(21,110,181,0.07) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        #floating-bg {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+
+        .float-icon {
+            position: absolute;
+            animation: floatUp linear infinite;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        @keyframes floatUp {
+            0%   { transform: translateY(100vh)  translateX(0px)   rotate(0deg);   opacity: 0; }
+            8%   { opacity: 1; }
+            25%  { transform: translateY(72vh)   translateX(18px)  rotate(90deg); }
+            50%  { transform: translateY(48vh)   translateX(-14px) rotate(180deg); }
+            75%  { transform: translateY(24vh)   translateX(16px)  rotate(270deg); }
+            92%  { opacity: 0.35; }
+            100% { transform: translateY(-120px) translateX(0px)   rotate(360deg); opacity: 0; }
+        }
+
+        /* ── Lock screen ── */
+        #lockScreen {
+            position: fixed;
+            inset: 0;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(7,20,35,0.92);
+            backdrop-filter: blur(4px);
+        }
+
+        .lock-card {
+            background: var(--brand-800);
+            border: 1px solid rgba(127,196,255,0.2);
+            border-radius: var(--r-3xl);
+            box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+            padding: 48px 40px;
+            text-align: center;
+            max-width: 420px;
+            width: 92%;
+            animation: slideUp 0.35s var(--ease);
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(30px); opacity: 0; }
+            to   { transform: translateY(0);    opacity: 1; }
+        }
+
+        .lock-icon { font-size: 3.5rem; margin-bottom: 20px; display: block; }
+
+        .lock-card h2 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--neutral-50);
+            margin-bottom: 8px;
+        }
+
+        .lock-card p {
+            color: var(--neutral-400);
+            font-size: 0.95rem;
+            margin-bottom: 28px;
+        }
+
+        .lock-card input {
+            width: 100%;
+            padding: 12px 18px;
+            background: rgba(255,255,255,0.08);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-radius: var(--r-xl);
+            color: #FFF;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 1.1rem;
+            text-align: center;
+            outline: none;
+            margin-bottom: 14px;
+            letter-spacing: 4px;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .lock-card input:focus {
+            border-color: var(--accent-500);
+            box-shadow: 0 0 0 3px rgba(18,197,154,0.2);
+        }
+
+        .lock-card input.shake { animation: shake 0.4s ease; border-color: #EF4444; }
+
+        @keyframes shake {
+            0%,100% { transform: translateX(0); }
+            20%,60% { transform: translateX(-8px); }
+            40%,80% { transform: translateX(8px); }
+        }
+
+        .lock-error {
+            color: #FCA5A5;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            min-height: 22px;
+        }
+
+        /* ── Page content ── */
+        #pageContent { display: none; }
+
+        .container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 20px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header { text-align: center; padding: 48px 0 20px; }
+
+        .header h1 {
+            font-family: 'Poppins', sans-serif;
+            font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+            font-weight: 700;
+            color: var(--neutral-50);
+            letter-spacing: -0.02em;
+        }
+
+        .header .subtitle {
+            color: var(--accent-400);
+            font-size: 0.8rem;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .mc-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(127,196,255,0.3), transparent);
+            margin: 24px 0;
+        }
+
+        .nav {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 20px 0;
+        }
+
+        .nav a {
+            padding: 10px 24px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #64748B;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            box-shadow: 0 1px 3px rgba(13,43,69,0.06);
+            transition: all 0.2s var(--ease);
+        }
+
+        .nav a.active, .nav a:hover {
+            background: var(--brand-600);
+            border-color: var(--brand-500);
+            color: #FFF;
+            box-shadow: 0 4px 14px rgba(21,110,181,0.4);
+        }
+
+        /* ── Cards ── */
+        .card {
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-2xl);
+            box-shadow: 0 10px 30px rgba(13,43,69,0.08);
+            padding: 28px;
+            margin-bottom: 20px;
+        }
+
+        .card h3 {
+            font-family: 'Poppins', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            color: var(--accent-600);
+            margin-bottom: 20px;
+        }
+
+        /* ── Type toggle ── */
+        .type-toggle {
+            display: flex;
+            background: #F6F8F8;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            overflow: hidden;
+        }
+
+        .type-toggle input { display: none; }
+
+        .type-toggle label {
+            flex: 1;
+            padding: 12px 16px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 700;
+            transition: all 0.15s;
+            color: #64748B;
+        }
+
+        #earn:checked   + label { background: rgba(18,197,154,0.2);  color: var(--accent-400); }
+        #redeem:checked + label { background: rgba(239,68,68,0.15);  color: #FCA5A5; }
+
+        /* ── Form grid ── */
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .form-group { display: flex; flex-direction: column; gap: 6px; }
+
+        .form-group label {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: var(--neutral-400);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 10px 14px;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            color: #1E293B;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .form-group input::placeholder, .form-group textarea::placeholder { color: #AAB4BC; }
+        .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+            border-color: var(--accent-500);
+            box-shadow: 0 0 0 3px rgba(18,197,154,0.15);
+        }
+
+        .form-group select option { background: #FFF; color: #1E293B; }
+
+        /* ── Balance banner ── */
+        .balance-banner {
+            padding: 14px 18px;
+            background: #EEF2F3;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            display: none;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .balance-banner.visible { display: flex; }
+
+        .balance-name {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1E293B;
+        }
+
+        .balance-stats { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .bal-chip {
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .bal-current  { background: rgba(18,197,154,0.15);  color: var(--accent-400); }
+        .bal-earned   { background: rgba(63,164,245,0.15);  color: #7FC4FF; }
+        .bal-redeemed { background: rgba(239,68,68,0.12);   color: #FCA5A5; }
+
+        /* ── Buttons ── */
+        .btn {
+            padding: 11px 22px;
+            border: none;
+            cursor: pointer;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 700;
+            border-radius: var(--r-xl);
+            transition: all 0.2s var(--ease);
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--brand-600);
+            color: #FFF;
+            box-shadow: 0 4px 14px rgba(21,110,181,0.35);
+        }
+
+        .btn-primary:hover {
+            background: var(--brand-700);
+            box-shadow: 0 6px 20px rgba(21,110,181,0.5);
+            transform: translateY(-1px);
+        }
+
+        .submit-wrap { display: flex; justify-content: flex-end; }
+
+        .btn-sm-danger {
+            padding: 5px 12px;
+            background: rgba(239,68,68,0.15);
+            color: #FCA5A5;
+            border: 1px solid rgba(239,68,68,0.3);
+            border-radius: var(--r-xl);
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.15s;
+        }
+
+        .btn-sm-danger:hover { background: rgba(239,68,68,0.28); }
+
+        /* ── Transaction table ── */
+        .tx-table-wrap {
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            overflow: hidden;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead {
+            background: #EEF2F3;
+            border-bottom: 1px solid #DCE3E6;
+        }
+
+        th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #64748B;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        td {
+            padding: 12px 16px;
+            font-size: 0.95rem;
+            border-bottom: 1px solid #EEF2F3;
+            color: #334155;
+        }
+
+        tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: #F6F8F8; }
+
+        .type-earn   { color: #0C8A6D; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+        .type-redeem { color: #DC2626; font-size: 0.8rem; font-weight: 700; text-transform: uppercase; }
+        .pts-earn    { color: #0C8A6D; font-weight: 700; }
+        .pts-redeem  { color: #DC2626; font-weight: 700; }
+
+        .empty-msg { text-align: center; padding: 28px; color: #AAB4BC; font-size: 0.9rem; }
+
+        .filter-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            flex-wrap: wrap;
+        }
+
+        .filter-bar select {
+            padding: 9px 14px;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            color: #1E293B;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .filter-bar select:focus { border-color: var(--accent-500); }
+        .filter-bar select option { background: #FFF; color: #1E293B; }
+
+        /* ── Toast ── */
+        #toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(80px);
+            background: #1E293B;
+            border: 1px solid #334155;
+            border-radius: var(--r-xl);
+            box-shadow: 0 10px 30px rgba(13,43,69,0.2);
+            color: #F6F8F8;
+            padding: 14px 28px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            z-index: 999;
+            transition: transform 0.3s var(--ease);
+            white-space: nowrap;
+        }
+
+        #toast.show { transform: translateX(-50%) translateY(0); }
+
+        .footer { text-align: center; padding: 40px; color: #AAB4BC; font-size: 0.85rem; }
+    </style>
+</head>
+<body>
+<div id="floating-bg"></div>
+
+<!-- Lock screen -->
+<div id="lockScreen">
+    <div class="lock-card">
+        <span class="lock-icon">🔑</span>
+        <h2>Staff Access</h2>
+        <p>Enter your password to continue</p>
+        <input type="password" id="pwdInput" placeholder="••••••••" onkeydown="if(event.key==='Enter') checkPassword()">
+        <div class="lock-error" id="lockError"></div>
+        <button class="btn btn-primary" style="width:100%;padding:13px" onclick="checkPassword()">Unlock Access</button>
+    </div>
+</div>
+
+<!-- Page content -->
+<div id="pageContent">
+    <div class="container">
+        <div class="header">
+            <h1>📜 Staff Panel</h1>
+            <div class="subtitle">*** Transaction Data Entry ***</div>
+        </div>
+
+        <div class="mc-divider"></div>
+
+        <nav class="nav">
+            <a href="index.html">🏆 Leaderboard</a>
+            <a href="admin.html">⚙ Admin</a>
+            <a href="staff.html" class="active">📜 Staff</a>
+        </nav>
+
+        <!-- Entry form -->
+        <div class="card">
+            <h3>[ Record a Transaction ]</h3>
+
+            <div class="form-grid" style="margin-bottom:0">
+                <div class="form-group" style="grid-column:1/-1">
+                    <label>Transaction Type</label>
+                    <div class="type-toggle">
+                        <input type="radio" id="earn" name="txType" value="earn" checked onchange="onTypeChange()">
+                        <label for="earn">⬆ Earn Coins</label>
+                        <input type="radio" id="redeem" name="txType" value="redeem" onchange="onTypeChange()">
+                        <label for="redeem">⬇ Redeem Coins</label>
+                    </div>
+                </div>
+            </div>
+
+            <div style="height:16px"></div>
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Player</label>
+                    <select id="txStudent" onchange="onStudentChange()">
+                        <option value="">-- Select player --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Activity</label>
+                    <select id="txActivity" onchange="onActivityChange()">
+                        <option value="">-- Select activity --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Coins</label>
+                    <input type="number" id="txPoints" placeholder="Amount" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="txDate">
+                </div>
+            </div>
+
+            <div class="form-group" style="margin-bottom:16px">
+                <label>Note (optional)</label>
+                <textarea id="txNote" rows="2" placeholder="e.g. Python quiz, bonus challenge..." style="resize:vertical"></textarea>
+            </div>
+
+            <div class="balance-banner" id="balanceBanner">
+                <div class="balance-name" id="balanceName"></div>
+                <div class="balance-stats">
+                    <span class="bal-chip bal-current"  id="balCurrent"></span>
+                    <span class="bal-chip bal-earned"   id="balEarned"></span>
+                    <span class="bal-chip bal-redeemed" id="balRedeemed"></span>
+                </div>
+            </div>
+
+            <div class="submit-wrap">
+                <button class="btn btn-primary" onclick="submitTransaction()">Save Transaction</button>
+            </div>
+        </div>
+
+        <!-- Recent transactions -->
+        <div class="card">
+            <h3>[ Recent Transactions ]</h3>
+
+            <div class="filter-bar">
+                <select id="filterStudent" onchange="renderTransactions()">
+                    <option value="">All Players</option>
+                </select>
+                <select id="filterType" onchange="renderTransactions()">
+                    <option value="">All Types</option>
+                    <option value="earn">Earn</option>
+                    <option value="redeem">Redeem</option>
+                </select>
+            </div>
+
+            <div class="tx-table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Player</th>
+                            <th>Activity</th>
+                            <th>Type</th>
+                            <th>Coins</th>
+                            <th>Note</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody id="txBody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="footer">Stay sharp, keep tracking!</div>
+    </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+    async function loadFloatIcons() {
+        try {
+            const res = await fetch('Assets/FloatingIconAssets/');
+            const html = await res.text();
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            const imgs = [...doc.querySelectorAll('a[href]')]
+                .map(a => a.getAttribute('href'))
+                .filter(h => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(h))
+                .map(h => 'Assets/FloatingIconAssets/' + h.replace(/^.*\//, ''));
+            if (imgs.length) return imgs;
+        } catch (_) {}
+        return ['Assets/FloatingIconAssets/Mahad1.png', 'Assets/FloatingIconAssets/Mahad2.png'];
+    }
+    async function createFloaters() {
+        const icons = await loadFloatIcons();
+        const bg = document.getElementById('floating-bg');
+        for (let i = 0; i < 24; i++) {
+            const el = document.createElement('img');
+            el.className = 'float-icon';
+            el.src = icons[Math.floor(Math.random() * icons.length)];
+            el.alt = '';
+            el.style.cssText = `left:${Math.random()*100}vw;width:${Math.random()*24+32}px;animation-duration:${Math.random()*20+32}s;animation-delay:${Math.random()*22}s;opacity:${Math.random()*0.25+0.08};`;
+            bg.appendChild(el);
+        }
+    }
+
+    const PASSWORD = 'Milton123';
+    function checkPassword() {
+        const val = document.getElementById('pwdInput').value;
+        if (val === PASSWORD) {
+            document.getElementById('lockScreen').style.display = 'none';
+            document.getElementById('pageContent').style.display = 'block';
+            initPage();
+        } else {
+            const input = document.getElementById('pwdInput');
+            document.getElementById('lockError').textContent = 'Wrong password! Try again.';
+            input.classList.add('shake');
+            input.value = '';
+            setTimeout(() => input.classList.remove('shake'), 500);
+        }
+    }
+
+    const LS = {
+        get: k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } },
+        set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
+    };
+    const genId = () => '_' + Math.random().toString(36).slice(2, 9);
+
+    function toast(msg) {
+        const t = document.getElementById('toast');
+        t.textContent = msg;
+        t.classList.add('show');
+        setTimeout(() => t.classList.remove('show'), 2800);
+    }
+
+    function getBalance(studentId) {
+        const tx = LS.get('cc_transactions').filter(t => t.studentId === studentId);
+        const earned   = tx.filter(t => t.type === 'earn').reduce((n,t) => n + t.points, 0);
+        const redeemed = tx.filter(t => t.type === 'redeem').reduce((n,t) => n + t.points, 0);
+        return { current: earned - redeemed, earned, redeemed };
+    }
+
+    function populateDropdowns() {
+        const students   = LS.get('cc_students');
+        const activities = LS.get('cc_activities');
+        const type = document.querySelector('input[name="txType"]:checked').value;
+
+        const studentSel = document.getElementById('txStudent');
+        const prev = studentSel.value;
+        studentSel.innerHTML = '<option value="">-- Select player --</option>' +
+            students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        if (prev) studentSel.value = prev;
+
+        const actSel = document.getElementById('txActivity');
+        const prevA = actSel.value;
+        if (type === 'earn') {
+            actSel.innerHTML = '<option value="">-- Select activity --</option>' +
+                activities.map(a => `<option value="${a.id}" data-pts="${a.points}">${a.name} (+${a.points})</option>`).join('');
+        } else {
+            actSel.innerHTML = '<option value="custom">Prize / Custom Redemption</option>' +
+                activities.map(a => `<option value="${a.id}" data-pts="${a.points}">${a.name} (${a.points})</option>`).join('');
+        }
+        if (prevA) actSel.value = prevA;
+
+        const fSel = document.getElementById('filterStudent');
+        const prevF = fSel.value;
+        fSel.innerHTML = '<option value="">All Players</option>' +
+            students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        if (prevF) fSel.value = prevF;
+    }
+
+    function onTypeChange() {
+        populateDropdowns();
+        onActivityChange();
+        document.getElementById('txPoints').value = '';
+    }
+
+    function onStudentChange() {
+        const id = document.getElementById('txStudent').value;
+        const banner = document.getElementById('balanceBanner');
+        if (!id) { banner.classList.remove('visible'); return; }
+        const student = LS.get('cc_students').find(s => s.id === id);
+        const bal = getBalance(id);
+        banner.classList.add('visible');
+        document.getElementById('balanceName').textContent  = '> ' + student.name;
+        document.getElementById('balCurrent').textContent   = 'Balance: ' + bal.current;
+        document.getElementById('balEarned').textContent    = 'Earned: '  + bal.earned;
+        document.getElementById('balRedeemed').textContent  = 'Redeemed: '+ bal.redeemed;
+    }
+
+    function onActivityChange() {
+        const sel  = document.getElementById('txActivity');
+        const opt  = sel.options[sel.selectedIndex];
+        const pts  = opt?.dataset?.pts;
+        const type = document.querySelector('input[name="txType"]:checked').value;
+        if (pts && type === 'earn') document.getElementById('txPoints').value = pts;
+    }
+
+    function submitTransaction() {
+        const studentId = document.getElementById('txStudent').value;
+        const actSel    = document.getElementById('txActivity');
+        const actId     = actSel.value;
+        const points    = parseInt(document.getElementById('txPoints').value, 10);
+        const type      = document.querySelector('input[name="txType"]:checked').value;
+        const date      = document.getElementById('txDate').value;
+        const note      = document.getElementById('txNote').value.trim();
+
+        if (!studentId)            { toast('Select a player!'); return; }
+        if (!actId)                { toast('Select an activity!'); return; }
+        if (!points || points < 1) { toast('Enter a valid coin amount!'); return; }
+        if (!date)                 { toast('Enter a date!'); return; }
+
+        if (type === 'redeem') {
+            const bal = getBalance(studentId);
+            if (points > bal.current) { toast(`Not enough coins! Balance: ${bal.current}`); return; }
+        }
+
+        const activity = LS.get('cc_activities').find(a => a.id === actId);
+        const actName  = activity?.name || 'Custom Redemption';
+
+        const tx = LS.get('cc_transactions');
+        tx.unshift({ id: genId(), studentId, activityId: actId, activityName: actName, type, points, date, note });
+        LS.set('cc_transactions', tx);
+
+        toast(type === 'earn' ? `+${points} coins earned!` : `${points} coins redeemed!`);
+
+        document.getElementById('txStudent').value  = '';
+        document.getElementById('txActivity').value = '';
+        document.getElementById('txPoints').value   = '';
+        document.getElementById('txNote').value     = '';
+        document.getElementById('balanceBanner').classList.remove('visible');
+        document.getElementById('earn').checked = true;
+        onTypeChange();
+        renderTransactions();
+    }
+
+    function renderTransactions() {
+        const filterStudent = document.getElementById('filterStudent').value;
+        const filterType    = document.getElementById('filterType').value;
+        const students      = LS.get('cc_students');
+        let rows = LS.get('cc_transactions');
+        if (filterStudent) rows = rows.filter(t => t.studentId === filterStudent);
+        if (filterType)    rows = rows.filter(t => t.type === filterType);
+
+        const tbody = document.getElementById('txBody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">No transactions yet...</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = rows.slice(0, 50).map(t => {
+            const student = students.find(s => s.id === t.studentId);
+            const sign = t.type === 'earn' ? '+' : '-';
+            return `<tr>
+                <td>${t.date}</td>
+                <td style="color:#FFF;font-weight:bold">${student?.name || 'Unknown'}</td>
+                <td style="color:#AAAAAA">${t.activityName}</td>
+                <td class="type-${t.type}">${t.type === 'earn' ? '⬆ EARN' : '⬇ REDEEM'}</td>
+                <td class="pts-${t.type}">${sign}${t.points}</td>
+                <td style="color:#666;font-size:16px">${t.note || '--'}</td>
+                <td><button class="btn-sm-danger" onclick="deleteTransaction('${t.id}')">🗑</button></td>
+            </tr>`;
+        }).join('');
+    }
+
+    function deleteTransaction(id) {
+        if (!confirm('Delete this transaction?')) return;
+        LS.set('cc_transactions', LS.get('cc_transactions').filter(t => t.id !== id));
+        toast('Transaction deleted.');
+        renderTransactions();
+        onStudentChange();
+    }
+
+    function initPage() {
+        document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+        populateDropdowns();
+        renderTransactions();
+    }
+
+    createFloaters();
+</script>
+</body>
+</html>
