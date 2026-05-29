@@ -44,30 +44,6 @@
             z-index: 0;
         }
 
-        #floating-bg {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .float-icon {
-            position: absolute;
-            animation: floatUp linear infinite;
-            pointer-events: none;
-            user-select: none;
-        }
-
-        @keyframes floatUp {
-            0%   { transform: translateY(100vh)  translateX(0px)   rotate(0deg);   opacity: 0; }
-            8%   { opacity: 1; }
-            25%  { transform: translateY(72vh)   translateX(18px)  rotate(90deg); }
-            50%  { transform: translateY(48vh)   translateX(-14px) rotate(180deg); }
-            75%  { transform: translateY(24vh)   translateX(16px)  rotate(270deg); }
-            92%  { opacity: 0.35; }
-            100% { transform: translateY(-120px) translateX(0px)   rotate(360deg); opacity: 0; }
-        }
 
         /* ── Lock screen ── */
         #lockScreen {
@@ -168,7 +144,7 @@
             font-family: 'Poppins', sans-serif;
             font-size: clamp(1.6rem, 3.5vw, 2.4rem);
             font-weight: 700;
-            color: var(--neutral-50);
+            color: var(--brand-900);
             letter-spacing: -0.02em;
         }
 
@@ -463,7 +439,6 @@
     </style>
 </head>
 <body>
-<div id="floating-bg"></div>
 
 <!-- Lock screen -->
 <div id="lockScreen">
@@ -593,31 +568,6 @@
 <div id="toast"></div>
 
 <script>
-    async function loadFloatIcons() {
-        try {
-            const res = await fetch('Assets/FloatingIconAssets/');
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const imgs = [...doc.querySelectorAll('a[href]')]
-                .map(a => a.getAttribute('href'))
-                .filter(h => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(h))
-                .map(h => 'Assets/FloatingIconAssets/' + h.replace(/^.*\//, ''));
-            if (imgs.length) return imgs;
-        } catch (_) {}
-        return ['Assets/FloatingIconAssets/Mahad1.png', 'Assets/FloatingIconAssets/Mahad2.png'];
-    }
-    async function createFloaters() {
-        const icons = await loadFloatIcons();
-        const bg = document.getElementById('floating-bg');
-        for (let i = 0; i < 24; i++) {
-            const el = document.createElement('img');
-            el.className = 'float-icon';
-            el.src = icons[Math.floor(Math.random() * icons.length)];
-            el.alt = '';
-            el.style.cssText = `left:${Math.random()*100}vw;width:${Math.random()*24+32}px;animation-duration:${Math.random()*20+32}s;animation-delay:${Math.random()*22}s;opacity:${Math.random()*0.25+0.08};`;
-            bg.appendChild(el);
-        }
-    }
 
     const PASSWORD = 'Milton123';
     function checkPassword() {
@@ -792,7 +742,6 @@
         renderTransactions();
     }
 
-    createFloaters();
 </script>
 </body>
 </html>

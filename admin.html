@@ -44,30 +44,6 @@
             z-index: 0;
         }
 
-        #floating-bg {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-
-        .float-icon {
-            position: absolute;
-            animation: floatUp linear infinite;
-            pointer-events: none;
-            user-select: none;
-        }
-
-        @keyframes floatUp {
-            0%   { transform: translateY(100vh)  translateX(0px)   rotate(0deg);   opacity: 0; }
-            8%   { opacity: 1; }
-            25%  { transform: translateY(72vh)   translateX(18px)  rotate(90deg); }
-            50%  { transform: translateY(48vh)   translateX(-14px) rotate(180deg); }
-            75%  { transform: translateY(24vh)   translateX(16px)  rotate(270deg); }
-            92%  { opacity: 0.35; }
-            100% { transform: translateY(-120px) translateX(0px)   rotate(360deg); opacity: 0; }
-        }
 
         /* ── Lock screen ── */
         #lockScreen {
@@ -168,7 +144,7 @@
             font-family: 'Poppins', sans-serif;
             font-size: clamp(1.6rem, 3.5vw, 2.4rem);
             font-weight: 700;
-            color: var(--neutral-50);
+            color: var(--brand-900);
             letter-spacing: -0.02em;
         }
 
@@ -374,7 +350,7 @@
             border-radius: 9999px;
             font-size: 0.85rem;
             font-weight: 700;
-            color: var(--accent-400);
+            color: var(--accent-600);
             margin-right: 12px;
             white-space: nowrap;
         }
@@ -416,7 +392,6 @@
     </style>
 </head>
 <body>
-<div id="floating-bg"></div>
 
 <!-- Lock screen -->
 <div id="lockScreen">
@@ -447,47 +422,66 @@
         </nav>
 
         <div class="tabs">
-            <button class="tab-btn active" onclick="switchTab('students', this)">👤 Students</button>
+            <button class="tab-btn active" onclick="switchTab('students', this)">🥷 Ninjas</button>
             <button class="tab-btn" onclick="switchTab('senseis', this)">🥋 Senseis</button>
             <button class="tab-btn" onclick="switchTab('activities', this)">⚡ Activities</button>
         </div>
 
-        <!-- Students -->
+        <!-- Ninjas -->
         <div id="tab-students" class="tab-panel active">
             <div class="card">
-                <h3>[ Add Student ]</h3>
+                <h3>Add Ninja</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Student Name</label>
-                        <input type="text" id="newStudentName" placeholder="e.g. Alex Carter">
+                        <label>Full Name</label>
+                        <input type="text" id="newNinjaFullName" placeholder="e.g. Alex Carter">
                     </div>
                     <div class="form-group">
-                        <label>Sensei</label>
-                        <select id="newStudentSensei"></select>
+                        <label>Short Name</label>
+                        <input type="text" id="newNinjaShortName" placeholder="e.g. Alex C">
                     </div>
-                    <button class="btn btn-primary" onclick="addStudent()">+ Add</button>
+                    <button class="btn btn-primary" onclick="addNinja()">+ Add Ninja</button>
                 </div>
             </div>
             <div class="card">
-                <h3>[ All Students ]</h3>
-                <div class="item-list" id="studentList"></div>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+                    <h3 style="margin-bottom:0">All Ninjas</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="ninjaSearch" placeholder="Search ninjas..." oninput="renderNinjas()"
+                               style="padding:8px 14px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s,box-shadow .2s">
+                        <div style="display:flex;gap:4px">
+                            <button id="filterAll"      onclick="setNinjaFilter('All')"      style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid var(--brand-500);background:var(--brand-600);color:#fff;transition:all .15s">All</button>
+                            <button id="filterActive"   onclick="setNinjaFilter('Active')"   style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid #DCE3E6;background:#fff;color:#64748B;transition:all .15s">Active</button>
+                            <button id="filterInactive" onclick="setNinjaFilter('Inactive')" style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid #DCE3E6;background:#fff;color:#64748B;transition:all .15s">Inactive</button>
+                        </div>
+                        <button class="btn btn-primary" onclick="exportNinjas()" style="padding:8px 16px;font-size:0.85rem">💾 Save Changes</button>
+                    </div>
+                </div>
+                <div class="item-list" id="ninjaList"></div>
             </div>
         </div>
 
         <!-- Senseis -->
         <div id="tab-senseis" class="tab-panel">
             <div class="card">
-                <h3>[ Add Sensei ]</h3>
+                <h3>Add Sensei</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Sensei Name</label>
                         <input type="text" id="newSenseiName" placeholder="e.g. Sensei Rivera">
                     </div>
-                    <button class="btn btn-primary" onclick="addSensei()">+ Add</button>
+                    <button class="btn btn-primary" onclick="addSensei()">+ Add Sensei</button>
                 </div>
             </div>
             <div class="card">
-                <h3>[ All Senseis ]</h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+                    <h3 style="margin-bottom:0">All Senseis</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="senseiSearch" placeholder="Search senseis..." oninput="renderSenseis()"
+                               style="padding:8px 14px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s,box-shadow .2s">
+                        <button class="btn btn-primary" onclick="exportSenseis()" style="padding:8px 16px;font-size:0.85rem">💾 Save Changes</button>
+                    </div>
+                </div>
                 <div class="item-list" id="senseiList"></div>
             </div>
         </div>
@@ -495,21 +489,28 @@
         <!-- Activities -->
         <div id="tab-activities" class="tab-panel">
             <div class="card">
-                <h3>[ Add Activity ]</h3>
+                <h3>Add Activity</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Activity Name</label>
                         <input type="text" id="newActivityName" placeholder="e.g. Perfect Score">
                     </div>
                     <div class="form-group" style="max-width:150px">
-                        <label>Points</label>
-                        <input type="number" id="newActivityPoints" placeholder="25" min="1">
+                        <label>Code Coins</label>
+                        <input type="number" id="newActivityCoins" placeholder="5" min="1">
                     </div>
-                    <button class="btn btn-primary" onclick="addActivity()">+ Add</button>
+                    <button class="btn btn-primary" onclick="addActivity()">+ Add Activity</button>
                 </div>
             </div>
             <div class="card">
-                <h3>[ All Activities ]</h3>
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+                    <h3 style="margin-bottom:0">All Activities</h3>
+                    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+                        <input type="text" id="activitySearch" placeholder="Search activities..." oninput="renderActivities()"
+                               style="padding:8px 14px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s,box-shadow .2s">
+                        <button class="btn btn-primary" onclick="exportActivities()" style="padding:8px 16px;font-size:0.85rem">💾 Save Changes</button>
+                    </div>
+                </div>
                 <div class="item-list" id="activityList"></div>
             </div>
         </div>
@@ -521,31 +522,6 @@
 <div id="toast"></div>
 
 <script>
-    async function loadFloatIcons() {
-        try {
-            const res = await fetch('Assets/FloatingIconAssets/');
-            const html = await res.text();
-            const doc = new DOMParser().parseFromString(html, 'text/html');
-            const imgs = [...doc.querySelectorAll('a[href]')]
-                .map(a => a.getAttribute('href'))
-                .filter(h => /\.(png|jpg|jpeg|gif|webp|svg)$/i.test(h))
-                .map(h => 'Assets/FloatingIconAssets/' + h.replace(/^.*\//, ''));
-            if (imgs.length) return imgs;
-        } catch (_) {}
-        return ['Assets/FloatingIconAssets/Mahad1.png', 'Assets/FloatingIconAssets/Mahad2.png'];
-    }
-    async function createFloaters() {
-        const icons = await loadFloatIcons();
-        const bg = document.getElementById('floating-bg');
-        for (let i = 0; i < 24; i++) {
-            const el = document.createElement('img');
-            el.className = 'float-icon';
-            el.src = icons[Math.floor(Math.random() * icons.length)];
-            el.alt = '';
-            el.style.cssText = `left:${Math.random()*100}vw;width:${Math.random()*24+32}px;animation-duration:${Math.random()*20+32}s;animation-delay:${Math.random()*22}s;opacity:${Math.random()*0.25+0.08};`;
-            bg.appendChild(el);
-        }
-    }
 
     const PASSWORD = 'Milton123';
     function checkPassword() {
@@ -585,79 +561,312 @@
     }
 
     function renderAll() {
-        renderStudents();
-        renderSenseis();
-        renderActivities();
-        populateSenseiDropdown();
+        Promise.all([ensureNinjasLoaded(), ensureSenseisLoaded(), ensureActivitiesLoaded()]).then(() => {
+            renderNinjas();
+            renderSenseis();
+            renderActivities();
+        });
     }
 
-    function populateSenseiDropdown() {
-        const sel = document.getElementById('newStudentSensei');
-        const senseis = LS.get('cc_senseis');
-        sel.innerHTML = senseis.length
-            ? senseis.map(s => `<option value="${s.id}">${s.name}</option>`).join('')
-            : '<option value="">-- No senseis yet --</option>';
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    function renderStudents() {
-        const students = LS.get('cc_students');
-        const senseis  = LS.get('cc_senseis');
-        const el = document.getElementById('studentList');
-        if (!students.length) { el.innerHTML = '<div class="empty-msg">No students yet...</div>'; return; }
-        el.innerHTML = students.map(s => {
-            const sensei = senseis.find(se => se.id === s.senseiId);
-            return `<div class="item-row">
+    async function ensureNinjasLoaded() {
+        if (localStorage.getItem('cc_ninjas_seeded')) return;
+        try {
+            const res  = await fetch('NinjaList.json');
+            const data = await res.json();
+            const ninjas = data.map(n => ({
+                id:        genId(),
+                fullName:  n['Ninja Full Name'] || '',
+                shortName: n['Ninja'] || '',
+                status:    n['Status'] || 'Active'
+            }));
+            LS.set('cc_ninjas', ninjas);
+            localStorage.setItem('cc_ninjas_seeded', '1');
+        } catch {
+            if (!localStorage.getItem('cc_ninjas_seeded')) {
+                LS.set('cc_ninjas', []);
+                localStorage.setItem('cc_ninjas_seeded', '1');
+            }
+        }
+    }
+
+    let editingNinjaId = null;
+    let ninjaStatusFilter = 'All';
+
+    function setNinjaFilter(value) {
+        ninjaStatusFilter = value;
+        ['All', 'Active', 'Inactive'].forEach(v => {
+            const btn = document.getElementById('filter' + v);
+            if (!btn) return;
+            const isActive = v === value;
+            btn.style.background     = isActive ? 'var(--brand-600)' : '#fff';
+            btn.style.color          = isActive ? '#fff' : '#64748B';
+            btn.style.borderColor    = isActive ? 'var(--brand-500)' : '#DCE3E6';
+        });
+        renderNinjas();
+    }
+
+    function renderNinjas() {
+        const ninjas = LS.get('cc_ninjas');
+        const query  = (document.getElementById('ninjaSearch')?.value || '').trim().toLowerCase();
+        const list   = ninjas.filter(n => {
+            const matchSearch = !query || n.fullName.toLowerCase().includes(query) || n.shortName.toLowerCase().includes(query);
+            const matchStatus = ninjaStatusFilter === 'All' || (n.status || 'Active') === ninjaStatusFilter;
+            return matchSearch && matchStatus;
+        });
+        const el = document.getElementById('ninjaList');
+        if (!list.length) { el.innerHTML = '<div class="empty-msg">No ninjas found...</div>'; return; }
+        el.innerHTML = list.map(n => {
+            if (n.id === editingNinjaId) {
+                return `<div class="item-row" id="ninja-row-${n.id}">
+                    <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+                        <input id="edit-full-${n.id}" value="${escHtml(n.fullName)}" placeholder="Full Name"
+                               style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:140px;outline:none">
+                        <input id="edit-short-${n.id}" value="${escHtml(n.shortName)}" placeholder="Short Name"
+                               style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:100px;outline:none">
+                    </div>
+                    <div style="display:flex;gap:6px;margin-left:10px">
+                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveNinja('${n.id}')">✓ Save</button>
+                        <button class="btn-danger" onclick="cancelNinjaEdit()">✕</button>
+                    </div>
+                </div>`;
+            }
+            const status = n.status || 'Active';
+            const isActive = status === 'Active';
+            const statusStyle = isActive
+                ? 'background:rgba(18,197,154,0.15);border:1px solid rgba(18,197,154,0.35);color:#0FAE88;'
+                : 'background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);color:#64748B;';
+            return `<div class="item-row" id="ninja-row-${n.id}">
                 <div class="item-info">
-                    <span class="item-name">👤 ${s.name}</span>
-                    <span class="item-sub">Sensei: ${sensei?.name || 'Unassigned'}</span>
+                    <span class="item-name">🥷 ${escHtml(n.fullName)}</span>
+                    <span class="item-sub">${escHtml(n.shortName)}</span>
                 </div>
-                <button class="btn btn-danger" onclick="deleteStudent('${s.id}')">🗑 Remove</button>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <button onclick="toggleNinjaStatus('${n.id}')"
+                            style="padding:7px 14px;font-size:0.82rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;transition:all .15s;${statusStyle}">${escHtml(status)}</button>
+                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditNinja('${n.id}')">✎ Edit</button>
+                    <button class="btn-danger" onclick="deleteNinja('${n.id}')">🗑 Remove</button>
+                </div>
             </div>`;
         }).join('');
     }
 
+    function startEditNinja(id) {
+        editingNinjaId = id;
+        renderNinjas();
+        document.getElementById('edit-full-' + id)?.focus();
+    }
+
+    function saveNinja(id) {
+        const fullName  = document.getElementById('edit-full-' + id)?.value.trim();
+        const shortName = document.getElementById('edit-short-' + id)?.value.trim();
+        if (!fullName) { toast('Full name cannot be empty!'); return; }
+        const ninjas = LS.get('cc_ninjas');
+        const idx = ninjas.findIndex(n => n.id === id);
+        if (idx !== -1) { ninjas[idx].fullName = fullName; ninjas[idx].shortName = shortName; }
+        LS.set('cc_ninjas', ninjas);
+        editingNinjaId = null;
+        toast('Ninja updated!');
+        renderNinjas();
+    }
+
+    function cancelNinjaEdit() {
+        editingNinjaId = null;
+        renderNinjas();
+    }
+
+    function toggleNinjaStatus(id) {
+        const ninjas = LS.get('cc_ninjas');
+        const idx = ninjas.findIndex(n => n.id === id);
+        if (idx !== -1) {
+            ninjas[idx].status = (ninjas[idx].status || 'Active') === 'Active' ? 'Inactive' : 'Active';
+            LS.set('cc_ninjas', ninjas);
+            renderNinjas();
+        }
+    }
+
+    async function ensureSenseisLoaded() {
+        if (localStorage.getItem('cc_senseis_seeded')) return;
+        try {
+            const res  = await fetch('SenseiList.json');
+            const data = await res.json();
+            const senseis = data.map(s => ({ id: genId(), name: s['Sensei'] || '' }));
+            LS.set('cc_senseis', senseis);
+            localStorage.setItem('cc_senseis_seeded', '1');
+        } catch {
+            if (!localStorage.getItem('cc_senseis_seeded')) {
+                LS.set('cc_senseis', []);
+                localStorage.setItem('cc_senseis_seeded', '1');
+            }
+        }
+    }
+
+    let editingSenseiId = null;
+
     function renderSenseis() {
         const senseis = LS.get('cc_senseis');
+        const query   = (document.getElementById('senseiSearch')?.value || '').trim().toLowerCase();
+        const list    = query ? senseis.filter(s => s.name.toLowerCase().includes(query)) : senseis;
         const el = document.getElementById('senseiList');
-        if (!senseis.length) { el.innerHTML = '<div class="empty-msg">No senseis yet...</div>'; return; }
-        el.innerHTML = senseis.map(s => `
-            <div class="item-row">
-                <div class="item-info"><span class="item-name">🥋 ${s.name}</span></div>
-                <button class="btn btn-danger" onclick="deleteSensei('${s.id}')">🗑 Remove</button>
-            </div>`).join('');
+        if (!list.length) { el.innerHTML = '<div class="empty-msg">No senseis found...</div>'; return; }
+        el.innerHTML = list.map(s => {
+            if (s.id === editingSenseiId) {
+                return `<div class="item-row" id="sensei-row-${s.id}">
+                    <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
+                        <input id="edit-sensei-${s.id}" value="${escHtml(s.name)}" placeholder="Sensei Name"
+                               style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:140px;outline:none">
+                    </div>
+                    <div style="display:flex;gap:6px;margin-left:10px">
+                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveSensei('${s.id}')">✓ Save</button>
+                        <button class="btn-danger" onclick="cancelSenseiEdit()">✕</button>
+                    </div>
+                </div>`;
+            }
+            return `<div class="item-row" id="sensei-row-${s.id}">
+                <div class="item-info">
+                    <span class="item-name">🥋 ${escHtml(s.name)}</span>
+                </div>
+                <div style="display:flex;gap:6px">
+                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditSensei('${s.id}')">✎ Edit</button>
+                    <button class="btn-danger" onclick="deleteSensei('${s.id}')">🗑 Remove</button>
+                </div>
+            </div>`;
+        }).join('');
     }
+
+    function startEditSensei(id) {
+        editingSenseiId = id;
+        renderSenseis();
+        document.getElementById('edit-sensei-' + id)?.focus();
+    }
+
+    function saveSensei(id) {
+        const name = document.getElementById('edit-sensei-' + id)?.value.trim();
+        if (!name) { toast('Sensei name cannot be empty!'); return; }
+        const senseis = LS.get('cc_senseis');
+        const idx = senseis.findIndex(s => s.id === id);
+        if (idx !== -1) senseis[idx].name = name;
+        LS.set('cc_senseis', senseis);
+        editingSenseiId = null;
+        toast('Sensei updated!');
+        renderSenseis();
+    }
+
+    function cancelSenseiEdit() {
+        editingSenseiId = null;
+        renderSenseis();
+    }
+
+    async function ensureActivitiesLoaded() {
+        if (localStorage.getItem('cc_activities_seeded')) return;
+        try {
+            const res  = await fetch('EarnPointsList.json');
+            const data = await res.json();
+            const activities = data.map(a => ({ id: genId(), name: a['Activity'] || '', coins: parseInt(a['Code Coins']) || 0 }));
+            LS.set('cc_activities', activities);
+            localStorage.setItem('cc_activities_seeded', '1');
+        } catch {
+            if (!localStorage.getItem('cc_activities_seeded')) {
+                LS.set('cc_activities', []);
+                localStorage.setItem('cc_activities_seeded', '1');
+            }
+        }
+    }
+
+    let editingActivityId = null;
 
     function renderActivities() {
         const activities = LS.get('cc_activities');
+        const query = (document.getElementById('activitySearch')?.value || '').trim().toLowerCase();
+        const list  = query ? activities.filter(a => a.name.toLowerCase().includes(query)) : activities;
         const el = document.getElementById('activityList');
-        if (!activities.length) { el.innerHTML = '<div class="empty-msg">No activities yet...</div>'; return; }
-        el.innerHTML = activities.map(a => `
-            <div class="item-row">
+        if (!list.length) { el.innerHTML = '<div class="empty-msg">No activities found...</div>'; return; }
+        el.innerHTML = list.map(a => {
+            if (a.id === editingActivityId) {
+                return `<div class="item-row" id="activity-row-${a.id}">
+                    <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap;align-items:center">
+                        <input id="edit-activity-name-${a.id}" value="${escHtml(a.name)}" placeholder="Activity Name"
+                               style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:180px;outline:none">
+                        <input id="edit-activity-coins-${a.id}" value="${a.coins}" placeholder="Coins" type="number" min="1"
+                               style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;width:90px;outline:none">
+                    </div>
+                    <div style="display:flex;gap:6px;margin-left:10px">
+                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveActivity('${a.id}')">✓ Save</button>
+                        <button class="btn-danger" onclick="cancelActivityEdit()">✕</button>
+                    </div>
+                </div>`;
+            }
+            return `<div class="item-row" id="activity-row-${a.id}">
                 <div style="display:flex;align-items:center;gap:10px;flex:1">
-                    <span class="points-pill">+${a.points} pts</span>
-                    <div class="item-info"><span class="item-name">⚡ ${a.name}</span></div>
+                    <span class="points-pill">💰 ${a.coins}</span>
+                    <div class="item-info"><span class="item-name">${escHtml(a.name)}</span></div>
                 </div>
-                <button class="btn btn-danger" onclick="deleteActivity('${a.id}')">🗑 Remove</button>
-            </div>`).join('');
+                <div style="display:flex;gap:6px">
+                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditActivity('${a.id}')">✎ Edit</button>
+                    <button class="btn-danger" onclick="deleteActivity('${a.id}')">🗑 Remove</button>
+                </div>
+            </div>`;
+        }).join('');
     }
 
-    function addStudent() {
-        const name = document.getElementById('newStudentName').value.trim();
-        const senseiId = document.getElementById('newStudentSensei').value;
-        if (!name) { toast('Enter a student name!'); return; }
-        const students = LS.get('cc_students');
-        students.push({ id: genId(), name, senseiId });
-        LS.set('cc_students', students);
-        document.getElementById('newStudentName').value = '';
-        toast('Student added!');
-        renderAll();
+    function startEditActivity(id) {
+        editingActivityId = id;
+        renderActivities();
+        document.getElementById('edit-activity-name-' + id)?.focus();
     }
 
-    function deleteStudent(id) {
-        if (!confirm('Remove this student? Their history will remain.')) return;
-        LS.set('cc_students', LS.get('cc_students').filter(s => s.id !== id));
-        toast('Student removed.');
-        renderAll();
+    function saveActivity(id) {
+        const name  = document.getElementById('edit-activity-name-' + id)?.value.trim();
+        const coins = parseInt(document.getElementById('edit-activity-coins-' + id)?.value, 10);
+        if (!name)             { toast('Activity name cannot be empty!'); return; }
+        if (!coins || coins < 1) { toast('Enter a valid coin value!'); return; }
+        const activities = LS.get('cc_activities');
+        const idx = activities.findIndex(a => a.id === id);
+        if (idx !== -1) { activities[idx].name = name; activities[idx].coins = coins; }
+        LS.set('cc_activities', activities);
+        editingActivityId = null;
+        toast('Activity updated!');
+        renderActivities();
+    }
+
+    function cancelActivityEdit() {
+        editingActivityId = null;
+        renderActivities();
+    }
+
+    function addNinja() {
+        const fullName  = document.getElementById('newNinjaFullName').value.trim();
+        const shortName = document.getElementById('newNinjaShortName').value.trim();
+        if (!fullName) { toast('Enter a full name!'); return; }
+        const ninjas = LS.get('cc_ninjas');
+        ninjas.push({ id: genId(), fullName, shortName, status: 'Active' });
+        LS.set('cc_ninjas', ninjas);
+        document.getElementById('newNinjaFullName').value  = '';
+        document.getElementById('newNinjaShortName').value = '';
+        toast('Ninja added!');
+        renderNinjas();
+    }
+
+    function deleteNinja(id) {
+        if (!confirm('Remove this ninja?')) return;
+        LS.set('cc_ninjas', LS.get('cc_ninjas').filter(n => n.id !== id));
+        toast('Ninja removed.');
+        renderNinjas();
+    }
+
+    function exportNinjas() {
+        const ninjas = LS.get('cc_ninjas');
+        const out = ninjas.map(n => ({ 'Ninja Full Name': n.fullName, 'Ninja': n.shortName, 'Status': n.status || 'Active' }));
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'NinjaList.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('NinjaList.json downloaded!');
     }
 
     function addSensei() {
@@ -668,38 +877,61 @@
         LS.set('cc_senseis', senseis);
         document.getElementById('newSenseiName').value = '';
         toast('Sensei added!');
-        renderAll();
+        renderSenseis();
     }
 
     function deleteSensei(id) {
         if (!confirm('Remove this sensei?')) return;
         LS.set('cc_senseis', LS.get('cc_senseis').filter(s => s.id !== id));
         toast('Sensei removed.');
-        renderAll();
+        renderSenseis();
+    }
+
+    function exportSenseis() {
+        const senseis = LS.get('cc_senseis');
+        const out  = senseis.map(s => ({ 'Sensei': s.name }));
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = 'SenseiList.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('SenseiList.json downloaded!');
     }
 
     function addActivity() {
-        const name   = document.getElementById('newActivityName').value.trim();
-        const points = parseInt(document.getElementById('newActivityPoints').value, 10);
-        if (!name)              { toast('Enter an activity name!'); return; }
-        if (!points || points < 1) { toast('Enter a valid points value!'); return; }
+        const name  = document.getElementById('newActivityName').value.trim();
+        const coins = parseInt(document.getElementById('newActivityCoins').value, 10);
+        if (!name)             { toast('Enter an activity name!'); return; }
+        if (!coins || coins < 1) { toast('Enter a valid coin value!'); return; }
         const activities = LS.get('cc_activities');
-        activities.push({ id: genId(), name, points });
+        activities.push({ id: genId(), name, coins });
         LS.set('cc_activities', activities);
-        document.getElementById('newActivityName').value = '';
-        document.getElementById('newActivityPoints').value = '';
+        document.getElementById('newActivityName').value  = '';
+        document.getElementById('newActivityCoins').value = '';
         toast('Activity added!');
-        renderAll();
+        renderActivities();
     }
 
     function deleteActivity(id) {
         if (!confirm('Remove this activity?')) return;
         LS.set('cc_activities', LS.get('cc_activities').filter(a => a.id !== id));
         toast('Activity removed.');
-        renderAll();
+        renderActivities();
     }
 
-    createFloaters();
+    function exportActivities() {
+        const activities = LS.get('cc_activities');
+        const out  = activities.map(a => ({ 'Activity': a.name, 'Code Coins': String(a.coins) }));
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const a    = document.createElement('a');
+        a.href     = URL.createObjectURL(blob);
+        a.download = 'EarnPointsList.json';
+        a.click();
+        URL.revokeObjectURL(a.href);
+        toast('EarnPointsList.json downloaded!');
+    }
+
 </script>
 </body>
 </html>

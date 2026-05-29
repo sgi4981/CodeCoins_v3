@@ -30,17 +30,15 @@
         body {
             height: 100vh;
             overflow: hidden;
-            background: #F6F8F8;
+            background: radial-gradient(ellipse at 65% 35%, #001a3d 0%, #000d1c 45%, #000000 100%);
             font-family: 'Nunito Sans', sans-serif;
-            color: #334155;
+            color: #ffffff;
         }
 
-        body::before {
-            content: '';
+        canvas#swirlCanvas {
             position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 260px;
-            background: radial-gradient(ellipse at 50% 0%, rgba(21,110,181,0.07) 0%, transparent 70%);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 0;
         }
@@ -89,7 +87,7 @@
             font-family: 'Poppins', sans-serif;
             font-size: clamp(2rem, 4.5vw, 3.2rem);
             font-weight: 700;
-            color: var(--brand-900);
+            color: #ffffff;
             letter-spacing: -0.02em;
             line-height: 1.2;
         }
@@ -199,7 +197,7 @@
             font-weight: 800;
             letter-spacing: 0.14em;
             text-transform: uppercase;
-            color: #000000;
+            color: rgba(255, 255, 255, 0.7);
             margin-bottom: 2px;
             text-align: center;
         }
@@ -525,6 +523,7 @@
     </style>
 </head>
 <body>
+<canvas id="swirlCanvas"></canvas>
 <div id="floating-bg"></div>
 
 <!-- Star access button -->
@@ -538,23 +537,9 @@
 
 <!-- Star dropdown menu -->
 <div class="star-menu hidden" id="starMenu">
-    <!-- Step 1: choose role -->
-    <div id="starStep1">
-        <div class="star-menu-title">Access Panel</div>
-        <button class="role-btn" onclick="selectRole('admin')">⚙️ Admin</button>
-        <button class="role-btn" onclick="selectRole('staff')">📜 Staff</button>
-    </div>
-    <!-- Step 2: enter password -->
-    <div id="starStep2" class="hidden">
-        <div class="star-pwd-label" id="starRoleLabel"></div>
-        <input class="star-pwd-input" type="password" id="starPwd" placeholder="Password"
-               onkeydown="if(event.key==='Enter') submitStarPwd()">
-        <div class="star-error" id="starError"></div>
-        <div class="star-actions">
-            <button class="star-back-btn" onclick="backToRoles()">← Back</button>
-            <button class="btn btn-primary" style="flex:1;padding:9px" onclick="submitStarPwd()">Unlock</button>
-        </div>
-    </div>
+    <div class="star-menu-title">Access Panel</div>
+    <button class="role-btn" onclick="window.location.href='admin.html'">⚙️ Admin</button>
+    <button class="role-btn" onclick="window.location.href='staff.html'">📜 Staff</button>
 </div>
 
 <div class="container">
@@ -760,49 +745,10 @@
     })();
 
     /* ── Star access menu ── */
-    let starRole = '';
-
     function toggleStarMenu(e) {
         e.stopPropagation();
         const menu = document.getElementById('starMenu');
-        const isHidden = menu.classList.contains('hidden');
-        if (isHidden) {
-            menu.classList.remove('hidden');
-            showStarStep1();
-        } else {
-            menu.classList.add('hidden');
-        }
-    }
-
-    function showStarStep1() {
-        document.getElementById('starStep1').classList.remove('hidden');
-        document.getElementById('starStep2').classList.add('hidden');
-        document.getElementById('starError').textContent = '';
-        document.getElementById('starPwd').value = '';
-    }
-
-    function selectRole(role) {
-        starRole = role;
-        document.getElementById('starRoleLabel').textContent =
-            role === 'admin' ? '⚙️ Admin Password' : '📜 Staff Password';
-        document.getElementById('starStep1').classList.add('hidden');
-        document.getElementById('starStep2').classList.remove('hidden');
-        setTimeout(() => document.getElementById('starPwd').focus(), 50);
-    }
-
-    function backToRoles() { showStarStep1(); }
-
-    function submitStarPwd() {
-        const pwd = document.getElementById('starPwd').value;
-        if (pwd === 'Milton123') {
-            window.location.href = starRole === 'admin' ? 'admin.html' : 'staff.html';
-        } else {
-            document.getElementById('starError').textContent = 'Wrong password. Try again.';
-            const input = document.getElementById('starPwd');
-            input.classList.add('shake');
-            input.value = '';
-            setTimeout(() => { input.classList.remove('shake'); input.focus(); }, 380);
-        }
+        menu.classList.toggle('hidden');
     }
 
     document.addEventListener('click', e => {
@@ -812,6 +758,86 @@
             menu.classList.add('hidden');
         }
     });
+
+    /* ── Swirl canvas (matches CodeCoinsV3 background) ── */
+    (function() {
+        const canvas = document.getElementById('swirlCanvas');
+        const ctx    = canvas.getContext('2d');
+
+        function resize() {
+            canvas.width  = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function rand(a, b) { return a + Math.random() * (b - a); }
+
+        class Swirl {
+            constructor(stagger) { this.init(stagger); }
+            init(stagger) {
+                this.x         = rand(0, canvas.width);
+                this.y         = rand(0, canvas.height);
+                this.maxRadius = rand(40, 170);
+                this.radius    = stagger ? rand(0, this.maxRadius) : 0;
+                this.turns     = rand(2, 5.5);
+                this.hue       = rand(200, 240);
+                this.sat       = rand(70, 100);
+                this.light     = rand(45, 72);
+                this.peakOp    = rand(0.25, 0.65);
+                this.opacity   = stagger ? rand(0, this.peakOp) : 0;
+                this.phase     = stagger && Math.random() > 0.4 ? 'hold' : 'in';
+                this.growSpeed = rand(0.35, 1.1);
+                this.lineWidth = rand(0.7, 2.4);
+                this.rotation  = rand(0, Math.PI * 2);
+                this.rotSpeed  = rand(-0.007, 0.007);
+                this.holdTimer = 0;
+                this.holdMax   = rand(80, 220);
+                this.fadeSpeed = rand(0.006, 0.018);
+            }
+            draw() {
+                if (this.opacity < 0.005) return;
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.globalAlpha = this.opacity;
+                ctx.strokeStyle = `hsl(${this.hue},${this.sat}%,${this.light}%)`;
+                ctx.lineWidth   = this.lineWidth;
+                ctx.lineCap     = 'round';
+                ctx.shadowColor = `hsl(${this.hue},${this.sat}%,${this.light}%)`;
+                ctx.shadowBlur  = 8;
+                const steps = 220, totalAngle = this.turns * Math.PI * 2;
+                ctx.beginPath();
+                for (let i = 0; i <= steps; i++) {
+                    const t = i / steps, angle = t * totalAngle, r = t * this.radius;
+                    i === 0 ? ctx.moveTo(Math.cos(angle)*r, Math.sin(angle)*r)
+                            : ctx.lineTo(Math.cos(angle)*r, Math.sin(angle)*r);
+                }
+                ctx.stroke();
+                ctx.restore();
+            }
+            update() {
+                this.rotation += this.rotSpeed;
+                if (this.phase === 'in') {
+                    this.opacity = Math.min(this.peakOp, this.opacity + 0.012);
+                    this.radius  = Math.min(this.maxRadius, this.radius + this.growSpeed);
+                    if (this.radius >= this.maxRadius && this.opacity >= this.peakOp * 0.95) this.phase = 'hold';
+                } else if (this.phase === 'hold') {
+                    if (++this.holdTimer >= this.holdMax) this.phase = 'out';
+                } else {
+                    this.opacity -= this.fadeSpeed;
+                    if (this.opacity <= 0) this.init(false);
+                }
+            }
+        }
+
+        const swirls = Array.from({ length: 20 }, (_, i) => new Swirl(i < 14));
+        (function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            swirls.forEach(s => { s.update(); s.draw(); });
+            requestAnimationFrame(animate);
+        })();
+    })();
 </script>
 </body>
 </html>
