@@ -354,7 +354,7 @@
             background: #FFFFFF;
             border: 1px solid #DCE3E6;
             border-radius: var(--r-xl);
-            overflow: hidden;
+            overflow-x: auto;
         }
 
         table { width: 100%; border-collapse: collapse; }
@@ -365,20 +365,22 @@
         }
 
         th {
-            padding: 14px 16px;
+            padding: 10px 12px;
             text-align: left;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
             color: #64748B;
             text-transform: uppercase;
             letter-spacing: 0.08em;
+            white-space: nowrap;
         }
 
         td {
-            padding: 12px 16px;
-            font-size: 0.95rem;
+            padding: 9px 12px;
+            font-size: 0.78rem;
             border-bottom: 1px solid #EEF2F3;
             color: #334155;
+            white-space: nowrap;
         }
 
         tr:last-child td { border-bottom: none; }
@@ -399,7 +401,8 @@
             flex-wrap: wrap;
         }
 
-        .filter-bar select {
+        .filter-bar select,
+        .filter-bar input[type="date"] {
             padding: 9px 14px;
             background: #FFFFFF;
             border: 1px solid #DCE3E6;
@@ -411,8 +414,19 @@
             transition: border-color 0.2s;
         }
 
-        .filter-bar select:focus { border-color: var(--accent-500); }
+        .filter-bar select:focus,
+        .filter-bar input[type="date"]:focus { border-color: var(--accent-500); }
         .filter-bar select option { background: #FFF; color: #1E293B; }
+
+        .filter-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--neutral-400);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            white-space: nowrap;
+            align-self: center;
+        }
 
         /* ── Toast ── */
         #toast {
@@ -468,10 +482,21 @@
             <a href="staff.html" class="active">📜 Staff</a>
         </nav>
 
+        <!-- Sensei selector -->
+        <div class="card" style="padding:20px 28px">
+            <div class="form-group">
+                <label>Sensei</label>
+                <select id="txSensei" style="max-width:320px">
+                    <option value="">-- Select Sensei --</option>
+                </select>
+            </div>
+        </div>
+
         <!-- Entry form -->
         <div class="card">
-            <h3>[ Record a Transaction ]</h3>
+            <h3>Enter Coins Earned / Redeemed</h3>
 
+            <!-- Type toggle -->
             <div class="form-grid" style="margin-bottom:0">
                 <div class="form-group" style="grid-column:1/-1">
                     <label>Transaction Type</label>
@@ -486,22 +511,18 @@
 
             <div style="height:16px"></div>
 
+            <!-- Shared fields -->
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Player</label>
+                    <label>Timestamp</label>
+                    <input type="text" id="txTimestamp" readonly
+                           style="background:#F6F8F8;color:#64748B;cursor:default;font-size:0.9rem">
+                </div>
+                <div class="form-group">
+                    <label>Ninja</label>
                     <select id="txStudent" onchange="onStudentChange()">
-                        <option value="">-- Select player --</option>
+                        <option value="">-- Select Ninja --</option>
                     </select>
-                </div>
-                <div class="form-group">
-                    <label>Activity</label>
-                    <select id="txActivity" onchange="onActivityChange()">
-                        <option value="">-- Select activity --</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Coins</label>
-                    <input type="number" id="txPoints" placeholder="Amount" min="1">
                 </div>
                 <div class="form-group">
                     <label>Date</label>
@@ -509,9 +530,34 @@
                 </div>
             </div>
 
-            <div class="form-group" style="margin-bottom:16px">
-                <label>Note (optional)</label>
-                <textarea id="txNote" rows="2" placeholder="e.g. Python quiz, bonus challenge..." style="resize:vertical"></textarea>
+            <!-- Earn-specific fields -->
+            <div id="earnFields" class="form-grid">
+                <div class="form-group">
+                    <label>Activity</label>
+                    <select id="txActivity" onchange="onActivityChange()">
+                        <option value="">-- Select activity --</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>CC Earned</label>
+                    <input type="number" id="txPoints" placeholder="0" min="1">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label>Activity Details</label>
+                    <input type="text" id="txActivityDetails" placeholder="e.g. level completed, bonus challenge...">
+                </div>
+            </div>
+
+            <!-- Redeem-specific fields -->
+            <div id="redeemFields" class="form-grid" style="display:none">
+                <div class="form-group">
+                    <label>CC Redeemed</label>
+                    <input type="number" id="txPointsRedeem" placeholder="0" min="1">
+                </div>
+                <div class="form-group" style="grid-column:1/-1">
+                    <label>Item Bought</label>
+                    <input type="text" id="txItemBought" placeholder="e.g. chocolate bar">
+                </div>
             </div>
 
             <div class="balance-banner" id="balanceBanner">
@@ -530,17 +576,28 @@
 
         <!-- Recent transactions -->
         <div class="card">
-            <h3>[ Recent Transactions ]</h3>
+            <h3>Transactions</h3>
 
             <div class="filter-bar">
+                <span class="filter-label">From</span>
+                <input type="date" id="filterFrom" onchange="renderTransactions()">
+                <span class="filter-label">To</span>
+                <input type="date" id="filterTo" onchange="renderTransactions()">
                 <select id="filterStudent" onchange="renderTransactions()">
-                    <option value="">All Players</option>
+                    <option value="">Select All</option>
                 </select>
-                <select id="filterType" onchange="renderTransactions()">
-                    <option value="">All Types</option>
-                    <option value="earn">Earn</option>
-                    <option value="redeem">Redeem</option>
-                </select>
+                <button class="btn btn-primary" onclick="clearFilters()" style="padding:9px 16px;font-size:0.85rem">Clear Filters</button>
+            </div>
+
+            <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#F0FDF8;border:1px solid rgba(18,197,154,0.3);border-radius:var(--r-xl)">
+                    <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#0FAE88">Total Earned</span>
+                    <span id="sumEarned" style="font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:700;color:#0C8A6D">0</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#FFF5F5;border:1px solid rgba(239,68,68,0.25);border-radius:var(--r-xl)">
+                    <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#DC2626">Total Redeemed</span>
+                    <span id="sumRedeemed" style="font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:700;color:#DC2626">0</span>
+                </div>
             </div>
 
             <div class="tx-table-wrap">
@@ -548,12 +605,13 @@
                     <thead>
                         <tr>
                             <th>Date</th>
-                            <th>Player</th>
+                            <th>Ninja</th>
+                            <th>Pts Earned</th>
+                            <th>Pts Redeemed</th>
                             <th>Activity</th>
-                            <th>Type</th>
-                            <th>Coins</th>
-                            <th>Note</th>
-                            <th></th>
+                            <th>Item Bought</th>
+                            <th>Timestamp</th>
+                            <th>Sensei</th>
                         </tr>
                     </thead>
                     <tbody id="txBody"></tbody>
@@ -568,6 +626,8 @@
 <div id="toast"></div>
 
 <script>
+
+    const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQrqfNZ1V0Q4AgjkLwtryIvX88tskCGY8FshWnimDyOfDjjNIZDFyHM5uAvHqQD_GlNZrlO4chIVBJo/pub?output=csv';
 
     const PASSWORD = 'Milton123';
     function checkPassword() {
@@ -591,6 +651,77 @@
     };
     const genId = () => '_' + Math.random().toString(36).slice(2, 9);
 
+    let sheetPlayers      = [];
+    let sheetTransactions = [];
+
+    function parseCSV(text) {
+        const lines = text.trim().split('\n');
+        return lines.slice(1).map(line => {
+            const cols = [];
+            let cur = '', inQ = false;
+            for (const c of line) {
+                if (c === '"') { inQ = !inQ; continue; }
+                if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
+                cur += c;
+            }
+            cols.push(cur.trim());
+            return cols;
+        }).filter(cols => cols.length >= 3 && cols[2]);
+    }
+
+    async function fetchSheetData() {
+        document.getElementById('txStudent').innerHTML = '<option value="">Loading players...</option>';
+        try {
+            const res  = await fetch(SHEET_CSV);
+            const text = await res.text();
+            const rows = parseCSV(text);
+
+            // Build transaction rows (col[1] = Ninja Full Name excluded from display)
+            sheetTransactions = rows.map(cols => ({
+                timestamp:       cols[0] || '',
+                ninja:           cols[2] || '',
+                date:            cols[3] || '',
+                sensei:          cols[4] || '',
+                activity:        cols[5] || '',
+                pointsEarned:    parseInt(cols[6])  || 0,
+                activityDetails: cols[7] || '',
+                pointsRedeemed:  parseInt(cols[8])  || 0,
+                itemBought:      cols[9] || '',
+            }));
+
+            // Derive unique players with aggregated balances
+            const playerMap = {};
+            sheetTransactions.forEach(t => {
+                if (!t.ninja) return;
+                if (!playerMap[t.ninja]) playerMap[t.ninja] = { name: t.ninja, earned: 0, redeemed: 0 };
+                playerMap[t.ninja].earned   += t.pointsEarned;
+                playerMap[t.ninja].redeemed += t.pointsRedeemed;
+            });
+            sheetPlayers = Object.values(playerMap)
+                .map(p => ({ name: p.name, earned: p.earned, redeemed: p.redeemed, current: p.earned - p.redeemed }))
+                .sort((a, b) => a.name.localeCompare(b.name));
+
+        } catch {
+            toast('Could not load data from spreadsheet.');
+            sheetPlayers      = [];
+            sheetTransactions = [];
+        }
+
+        // Set default date filter to last 2 days of actual data
+        const isoDates = sheetTransactions.map(t => toISODate(t.date)).filter(d => d);
+        if (isoDates.length) {
+            const maxDate = isoDates.reduce((a, b) => a > b ? a : b);
+            const [y, m, d] = maxDate.split('-').map(Number);
+            const fromObj = new Date(y, m - 1, d - 2);
+            const fmt = dt => dt.toISOString().split('T')[0];
+            document.getElementById('filterTo').value   = maxDate;
+            document.getElementById('filterFrom').value = fmt(fromObj);
+        }
+
+        populateDropdowns();
+        renderTransactions();
+    }
+
     function toast(msg) {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -598,59 +729,71 @@
         setTimeout(() => t.classList.remove('show'), 2800);
     }
 
-    function getBalance(studentId) {
-        const tx = LS.get('cc_transactions').filter(t => t.studentId === studentId);
-        const earned   = tx.filter(t => t.type === 'earn').reduce((n,t) => n + t.points, 0);
-        const redeemed = tx.filter(t => t.type === 'redeem').reduce((n,t) => n + t.points, 0);
-        return { current: earned - redeemed, earned, redeemed };
+    function getSheetBalance(playerName) {
+        const p = sheetPlayers.find(p => p.name === playerName) || { current: 0, earned: 0, redeemed: 0 };
+        const local = LS.get('cc_transactions').filter(t => t.playerName === playerName);
+        const localEarned   = local.filter(t => t.type === 'earn').reduce((n,t) => n + t.points, 0);
+        const localRedeemed = local.filter(t => t.type === 'redeem').reduce((n,t) => n + t.points, 0);
+        return {
+            current:  p.current  + localEarned - localRedeemed,
+            earned:   p.earned   + localEarned,
+            redeemed: p.redeemed + localRedeemed,
+        };
     }
 
     function populateDropdowns() {
-        const students   = LS.get('cc_students');
         const activities = LS.get('cc_activities');
+        const senseis    = LS.get('cc_senseis');
         const type = document.querySelector('input[name="txType"]:checked').value;
 
-        const studentSel = document.getElementById('txStudent');
-        const prev = studentSel.value;
-        studentSel.innerHTML = '<option value="">-- Select player --</option>' +
-            students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
-        if (prev) studentSel.value = prev;
+        // Ninja dropdown
+        const playerSel = document.getElementById('txStudent');
+        const prev = playerSel.value;
+        playerSel.innerHTML = '<option value="">-- Select Ninja --</option>' +
+            sheetPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+        if (prev) playerSel.value = prev;
 
+        // Sensei dropdown
+        const senseiSel = document.getElementById('txSensei');
+        const prevS = senseiSel.value;
+        senseiSel.innerHTML = '<option value="">-- Select Sensei --</option>' +
+            senseis.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+        if (prevS) senseiSel.value = prevS;
+
+        // Activity dropdown (earn only)
         const actSel = document.getElementById('txActivity');
         const prevA = actSel.value;
-        if (type === 'earn') {
-            actSel.innerHTML = '<option value="">-- Select activity --</option>' +
-                activities.map(a => `<option value="${a.id}" data-pts="${a.points}">${a.name} (+${a.points})</option>`).join('');
-        } else {
-            actSel.innerHTML = '<option value="custom">Prize / Custom Redemption</option>' +
-                activities.map(a => `<option value="${a.id}" data-pts="${a.points}">${a.name} (${a.points})</option>`).join('');
-        }
+        actSel.innerHTML = '<option value="">-- Select activity --</option>' +
+            activities.map(a => `<option value="${a.id}" data-pts="${a.coins}">${a.name} (+${a.coins})</option>`).join('');
         if (prevA) actSel.value = prevA;
 
+        // Show/hide earn vs redeem fields
+        document.getElementById('earnFields').style.display   = type === 'earn'   ? '' : 'none';
+        document.getElementById('redeemFields').style.display = type === 'redeem' ? '' : 'none';
+
+        // Filter dropdown
         const fSel = document.getElementById('filterStudent');
         const prevF = fSel.value;
-        fSel.innerHTML = '<option value="">All Players</option>' +
-            students.map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+        fSel.innerHTML = '<option value="">Select All</option>' +
+            sheetPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
         if (prevF) fSel.value = prevF;
     }
 
     function onTypeChange() {
         populateDropdowns();
         onActivityChange();
-        document.getElementById('txPoints').value = '';
     }
 
     function onStudentChange() {
-        const id = document.getElementById('txStudent').value;
+        const name = document.getElementById('txStudent').value;
         const banner = document.getElementById('balanceBanner');
-        if (!id) { banner.classList.remove('visible'); return; }
-        const student = LS.get('cc_students').find(s => s.id === id);
-        const bal = getBalance(id);
+        if (!name) { banner.classList.remove('visible'); return; }
+        const bal = getSheetBalance(name);
         banner.classList.add('visible');
-        document.getElementById('balanceName').textContent  = '> ' + student.name;
-        document.getElementById('balCurrent').textContent   = 'Balance: ' + bal.current;
-        document.getElementById('balEarned').textContent    = 'Earned: '  + bal.earned;
-        document.getElementById('balRedeemed').textContent  = 'Redeemed: '+ bal.redeemed;
+        document.getElementById('balanceName').textContent  = '> ' + name;
+        document.getElementById('balCurrent').textContent   = 'Balance: '  + bal.current;
+        document.getElementById('balEarned').textContent    = 'Earned: '   + bal.earned;
+        document.getElementById('balRedeemed').textContent  = 'Redeemed: ' + bal.redeemed;
     }
 
     function onActivityChange() {
@@ -662,70 +805,104 @@
     }
 
     function submitTransaction() {
-        const studentId = document.getElementById('txStudent').value;
-        const actSel    = document.getElementById('txActivity');
-        const actId     = actSel.value;
-        const points    = parseInt(document.getElementById('txPoints').value, 10);
-        const type      = document.querySelector('input[name="txType"]:checked').value;
-        const date      = document.getElementById('txDate').value;
-        const note      = document.getElementById('txNote').value.trim();
+        const type       = document.querySelector('input[name="txType"]:checked').value;
+        const playerName = document.getElementById('txStudent').value;
+        const date       = document.getElementById('txDate').value;
+        const sensei     = document.getElementById('txSensei').value;
+        const timestamp  = document.getElementById('txTimestamp').value;
 
-        if (!studentId)            { toast('Select a player!'); return; }
-        if (!actId)                { toast('Select an activity!'); return; }
-        if (!points || points < 1) { toast('Enter a valid coin amount!'); return; }
-        if (!date)                 { toast('Enter a date!'); return; }
-
-        if (type === 'redeem') {
-            const bal = getBalance(studentId);
-            if (points > bal.current) { toast(`Not enough coins! Balance: ${bal.current}`); return; }
-        }
-
-        const activity = LS.get('cc_activities').find(a => a.id === actId);
-        const actName  = activity?.name || 'Custom Redemption';
+        if (!playerName) { toast('Select a Ninja!'); return; }
+        if (!date)       { toast('Enter a date!'); return; }
 
         const tx = LS.get('cc_transactions');
-        tx.unshift({ id: genId(), studentId, activityId: actId, activityName: actName, type, points, date, note });
-        LS.set('cc_transactions', tx);
 
-        toast(type === 'earn' ? `+${points} coins earned!` : `${points} coins redeemed!`);
+        if (type === 'earn') {
+            const actSel          = document.getElementById('txActivity');
+            const actId           = actSel.value;
+            const points          = parseInt(document.getElementById('txPoints').value, 10);
+            const activityDetails = document.getElementById('txActivityDetails').value.trim();
 
-        document.getElementById('txStudent').value  = '';
-        document.getElementById('txActivity').value = '';
-        document.getElementById('txPoints').value   = '';
-        document.getElementById('txNote').value     = '';
+            if (!actId)                { toast('Select an activity!'); return; }
+            if (!points || points < 1) { toast('Enter a valid CC Earned amount!'); return; }
+
+            const activity = LS.get('cc_activities').find(a => a.id === actId);
+            const actName  = activity?.name || '';
+
+            tx.unshift({ id: genId(), type, timestamp, playerName, date, sensei, activityId: actId, activityName: actName, points, activityDetails });
+            LS.set('cc_transactions', tx);
+            toast(`+${points} coins earned!`);
+
+            document.getElementById('txActivity').value       = '';
+            document.getElementById('txPoints').value         = '';
+            document.getElementById('txActivityDetails').value = '';
+
+        } else {
+            const points     = parseInt(document.getElementById('txPointsRedeem').value, 10);
+            const itemBought = document.getElementById('txItemBought').value.trim();
+
+            if (!points || points < 1) { toast('Enter a valid CC Redeemed amount!'); return; }
+
+            const bal = getSheetBalance(playerName);
+            if (points > bal.current) { toast(`Not enough coins! Balance: ${bal.current}`); return; }
+
+            tx.unshift({ id: genId(), type, timestamp, playerName, date, sensei, points, itemBought });
+            LS.set('cc_transactions', tx);
+            toast(`${points} coins redeemed!`);
+
+            document.getElementById('txPointsRedeem').value = '';
+            document.getElementById('txItemBought').value   = '';
+        }
+
+        document.getElementById('txStudent').value = '';
+        document.getElementById('txSensei').value  = '';
         document.getElementById('balanceBanner').classList.remove('visible');
         document.getElementById('earn').checked = true;
         onTypeChange();
         renderTransactions();
     }
 
+    function toISODate(str) {
+        // Convert "M/D/YYYY" → "YYYY-MM-DD" for reliable string comparison
+        if (!str) return '';
+        const p = str.split('/');
+        if (p.length !== 3) return '';
+        return `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
+    }
+
     function renderTransactions() {
-        const filterStudent = document.getElementById('filterStudent').value;
-        const filterType    = document.getElementById('filterType').value;
-        const students      = LS.get('cc_students');
-        let rows = LS.get('cc_transactions');
-        if (filterStudent) rows = rows.filter(t => t.studentId === filterStudent);
-        if (filterType)    rows = rows.filter(t => t.type === filterType);
+        const filterPlayer = document.getElementById('filterStudent').value;
+        const filterFrom   = document.getElementById('filterFrom').value;
+        const filterTo     = document.getElementById('filterTo').value;
+
+        let rows = sheetTransactions.filter(t => {
+            if (filterPlayer && t.ninja !== filterPlayer) return false;
+            const iso = toISODate(t.date);
+            if (filterFrom && iso && iso < filterFrom) return false;
+            if (filterTo   && iso && iso > filterTo)   return false;
+            return true;
+        });
+
+        const totalEarned   = rows.reduce((s, t) => s + t.pointsEarned,   0);
+        const totalRedeemed = rows.reduce((s, t) => s + t.pointsRedeemed, 0);
+        document.getElementById('sumEarned').textContent   = totalEarned;
+        document.getElementById('sumRedeemed').textContent = totalRedeemed;
 
         const tbody = document.getElementById('txBody');
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">No transactions yet...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">No transactions found...</td></tr>';
             return;
         }
 
-        tbody.innerHTML = rows.slice(0, 50).map(t => {
-            const student = students.find(s => s.id === t.studentId);
-            const sign = t.type === 'earn' ? '+' : '-';
-            return `<tr>
-                <td>${t.date}</td>
-                <td style="color:#FFF;font-weight:bold">${student?.name || 'Unknown'}</td>
-                <td style="color:#AAAAAA">${t.activityName}</td>
-                <td class="type-${t.type}">${t.type === 'earn' ? '⬆ EARN' : '⬇ REDEEM'}</td>
-                <td class="pts-${t.type}">${sign}${t.points}</td>
-                <td style="color:#666;font-size:16px">${t.note || '--'}</td>
-                <td><button class="btn-sm-danger" onclick="deleteTransaction('${t.id}')">🗑</button></td>
-            </tr>`;
-        }).join('');
+        tbody.innerHTML = rows.slice(0, 100).map(t => `<tr>
+            <td>${t.date}</td>
+            <td style="font-weight:700">${t.ninja}</td>
+            <td class="${t.pointsEarned ? 'pts-earn' : ''}">${t.pointsEarned || '--'}</td>
+            <td class="${t.pointsRedeemed ? 'pts-redeem' : ''}">${t.pointsRedeemed || '--'}</td>
+            <td>${t.activity || '--'}</td>
+            <td style="color:#64748B;font-size:0.9rem">${t.itemBought || '--'}</td>
+            <td style="color:#64748B;font-size:0.85rem">${t.timestamp}</td>
+            <td>${t.sensei}</td>
+        </tr>`).join('');
     }
 
     function deleteTransaction(id) {
@@ -736,10 +913,26 @@
         onStudentChange();
     }
 
+    function clearFilters() {
+        document.getElementById('filterFrom').value    = '';
+        document.getElementById('filterTo').value      = '';
+        document.getElementById('filterStudent').value = '';
+        renderTransactions();
+    }
+
+    function refreshTimestamp() {
+        const el = document.getElementById('txTimestamp');
+        if (el) el.value = new Date().toLocaleString('en-US', {
+            month: 'numeric', day: 'numeric', year: 'numeric',
+            hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true
+        });
+    }
+
     function initPage() {
         document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
-        populateDropdowns();
-        renderTransactions();
+        refreshTimestamp();
+        setInterval(refreshTimestamp, 1000);
+        fetchSheetData();
     }
 
 </script>
