@@ -645,15 +645,79 @@
         }
     }
 
-    const LS = {
-        get: k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } },
-        set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
-    };
-    const genId = () => '_' + Math.random().toString(36).slice(2, 9);
-
-    let sheetPlayers      = [];
+    // ── State ────────────────────────────────────────────────────────────────
     let sheetTransactions = [];
+    let mongoTransactions = [];
+    let allPlayers        = [];
+    let senseis           = [];
+    let activities        = [];
 
+    // ── API helper ───────────────────────────────────────────────────────────
+    async function api(method, path, body) {
+        const opts = { method, headers: {} };
+        if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+        const r = await fetch(path, opts);
+        if (!r.ok) throw new Error(await r.text());
+        return r.json();
+    }
+
+    async function loadSenseis()    { try { senseis    = await api('GET', '/api/senseis');    } catch { senseis    = []; } }
+    async function loadActivities() { try { activities = await api('GET', '/api/activities'); } catch { activities = []; } }
+    async function loadMongoTransactions() { try { mongoTransactions = await api('GET', '/api/transactions'); } catch { mongoTransactions = []; } }
+
+    // ── Date helpers ─────────────────────────────────────────────────────────
+    function toISODate(str) {
+        if (!str) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;          // already ISO
+        const p = str.split('/');
+        if (p.length === 3) return `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
+        return '';
+    }
+
+    function fmtDate(str) {
+        const iso = toISODate(str);
+        if (!iso) return str;
+        const [y, m, d] = iso.split('-');
+        return `${parseInt(m)}/${parseInt(d)}/${y}`;
+    }
+
+    // ── Normalise a MongoDB transaction to match the sheet row shape ─────────
+    function normMongo(t) {
+        return {
+            timestamp:       t.timestamp       || '',
+            ninja:           t.ninja           || '',
+            date:            t.date            || '',
+            sensei:          t.sensei          || '',
+            activity:        t.activityName    || '',
+            pointsEarned:    t.pointsEarned    || 0,
+            activityDetails: t.activityDetails || '',
+            pointsRedeemed:  t.pointsRedeemed  || 0,
+            itemBought:      t.itemBought      || '',
+        };
+    }
+
+    // ── Rebuild player totals from all sources ───────────────────────────────
+    function computeAllPlayers() {
+        const allTx = [...sheetTransactions, ...mongoTransactions.map(normMongo)];
+        const map   = {};
+        allTx.forEach(t => {
+            if (!t.ninja) return;
+            if (!map[t.ninja]) map[t.ninja] = { name: t.ninja, earned: 0, redeemed: 0 };
+            map[t.ninja].earned   += t.pointsEarned   || 0;
+            map[t.ninja].redeemed += t.pointsRedeemed || 0;
+        });
+        allPlayers = Object.values(map)
+            .map(p => ({ name: p.name, earned: p.earned, redeemed: p.redeemed, current: p.earned - p.redeemed }))
+            .sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    function getBalance(playerName) {
+        const p = allPlayers.find(pl => pl.name === playerName);
+        return p ? { current: p.current, earned: p.earned, redeemed: p.redeemed }
+                 : { current: 0, earned: 0, redeemed: 0 };
+    }
+
+    // ── CSV / Google Sheets ──────────────────────────────────────────────────
     function parseCSV(text) {
         const lines = text.trim().split('\n');
         return lines.slice(1).map(line => {
@@ -670,13 +734,10 @@
     }
 
     async function fetchSheetData() {
-        document.getElementById('txStudent').innerHTML = '<option value="">Loading players...</option>';
         try {
             const res  = await fetch(SHEET_CSV);
             const text = await res.text();
             const rows = parseCSV(text);
-
-            // Build transaction rows (col[1] = Ninja Full Name excluded from display)
             sheetTransactions = rows.map(cols => ({
                 timestamp:       cols[0] || '',
                 ninja:           cols[2] || '',
@@ -688,40 +749,13 @@
                 pointsRedeemed:  parseInt(cols[8])  || 0,
                 itemBought:      cols[9] || '',
             }));
-
-            // Derive unique players with aggregated balances
-            const playerMap = {};
-            sheetTransactions.forEach(t => {
-                if (!t.ninja) return;
-                if (!playerMap[t.ninja]) playerMap[t.ninja] = { name: t.ninja, earned: 0, redeemed: 0 };
-                playerMap[t.ninja].earned   += t.pointsEarned;
-                playerMap[t.ninja].redeemed += t.pointsRedeemed;
-            });
-            sheetPlayers = Object.values(playerMap)
-                .map(p => ({ name: p.name, earned: p.earned, redeemed: p.redeemed, current: p.earned - p.redeemed }))
-                .sort((a, b) => a.name.localeCompare(b.name));
-
         } catch {
             toast('Could not load data from spreadsheet.');
-            sheetPlayers      = [];
             sheetTransactions = [];
         }
-
-        // Set default date filter to last 2 days of actual data
-        const isoDates = sheetTransactions.map(t => toISODate(t.date)).filter(d => d);
-        if (isoDates.length) {
-            const maxDate = isoDates.reduce((a, b) => a > b ? a : b);
-            const [y, m, d] = maxDate.split('-').map(Number);
-            const fromObj = new Date(y, m - 1, d - 2);
-            const fmt = dt => dt.toISOString().split('T')[0];
-            document.getElementById('filterTo').value   = maxDate;
-            document.getElementById('filterFrom').value = fmt(fromObj);
-        }
-
-        populateDropdowns();
-        renderTransactions();
     }
 
+    // ── UI helpers ───────────────────────────────────────────────────────────
     function toast(msg) {
         const t = document.getElementById('toast');
         t.textContent = msg;
@@ -729,66 +763,44 @@
         setTimeout(() => t.classList.remove('show'), 2800);
     }
 
-    function getSheetBalance(playerName) {
-        const p = sheetPlayers.find(p => p.name === playerName) || { current: 0, earned: 0, redeemed: 0 };
-        const local = LS.get('cc_transactions').filter(t => t.playerName === playerName);
-        const localEarned   = local.filter(t => t.type === 'earn').reduce((n,t) => n + t.points, 0);
-        const localRedeemed = local.filter(t => t.type === 'redeem').reduce((n,t) => n + t.points, 0);
-        return {
-            current:  p.current  + localEarned - localRedeemed,
-            earned:   p.earned   + localEarned,
-            redeemed: p.redeemed + localRedeemed,
-        };
-    }
-
     function populateDropdowns() {
-        const activities = LS.get('cc_activities');
-        const senseis    = LS.get('cc_senseis');
         const type = document.querySelector('input[name="txType"]:checked').value;
 
-        // Ninja dropdown
         const playerSel = document.getElementById('txStudent');
         const prev = playerSel.value;
         playerSel.innerHTML = '<option value="">-- Select Ninja --</option>' +
-            sheetPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
         if (prev) playerSel.value = prev;
 
-        // Sensei dropdown
         const senseiSel = document.getElementById('txSensei');
         const prevS = senseiSel.value;
         senseiSel.innerHTML = '<option value="">-- Select Sensei --</option>' +
             senseis.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
         if (prevS) senseiSel.value = prevS;
 
-        // Activity dropdown (earn only)
         const actSel = document.getElementById('txActivity');
-        const prevA = actSel.value;
+        const prevA  = actSel.value;
         actSel.innerHTML = '<option value="">-- Select activity --</option>' +
-            activities.map(a => `<option value="${a.id}" data-pts="${a.coins}">${a.name} (+${a.coins})</option>`).join('');
+            activities.map(a => `<option value="${a._id}" data-pts="${a.coins}">${a.name} (+${a.coins})</option>`).join('');
         if (prevA) actSel.value = prevA;
 
-        // Show/hide earn vs redeem fields
         document.getElementById('earnFields').style.display   = type === 'earn'   ? '' : 'none';
         document.getElementById('redeemFields').style.display = type === 'redeem' ? '' : 'none';
 
-        // Filter dropdown
         const fSel = document.getElementById('filterStudent');
         const prevF = fSel.value;
         fSel.innerHTML = '<option value="">Select All</option>' +
-            sheetPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
         if (prevF) fSel.value = prevF;
     }
 
-    function onTypeChange() {
-        populateDropdowns();
-        onActivityChange();
-    }
+    function onTypeChange() { populateDropdowns(); onActivityChange(); }
 
     function onStudentChange() {
-        const name = document.getElementById('txStudent').value;
+        const name   = document.getElementById('txStudent').value;
         const banner = document.getElementById('balanceBanner');
         if (!name) { banner.classList.remove('visible'); return; }
-        const bal = getSheetBalance(name);
+        const bal = getBalance(name);
         banner.classList.add('visible');
         document.getElementById('balanceName').textContent  = '> ' + name;
         document.getElementById('balCurrent').textContent   = 'Balance: '  + bal.current;
@@ -804,7 +816,8 @@
         if (pts && type === 'earn') document.getElementById('txPoints').value = pts;
     }
 
-    function submitTransaction() {
+    // ── Transaction submission → MongoDB ─────────────────────────────────────
+    async function submitTransaction() {
         const type       = document.querySelector('input[name="txType"]:checked').value;
         const playerName = document.getElementById('txStudent').value;
         const date       = document.getElementById('txDate').value;
@@ -814,7 +827,7 @@
         if (!playerName) { toast('Select a Ninja!'); return; }
         if (!date)       { toast('Enter a date!'); return; }
 
-        const tx = LS.get('cc_transactions');
+        let txData;
 
         if (type === 'earn') {
             const actSel          = document.getElementById('txActivity');
@@ -825,56 +838,74 @@
             if (!actId)                { toast('Select an activity!'); return; }
             if (!points || points < 1) { toast('Enter a valid CC Earned amount!'); return; }
 
-            const activity = LS.get('cc_activities').find(a => a.id === actId);
-            const actName  = activity?.name || '';
-
-            tx.unshift({ id: genId(), type, timestamp, playerName, date, sensei, activityId: actId, activityName: actName, points, activityDetails });
-            LS.set('cc_transactions', tx);
-            toast(`+${points} coins earned!`);
-
-            document.getElementById('txActivity').value       = '';
-            document.getElementById('txPoints').value         = '';
-            document.getElementById('txActivityDetails').value = '';
-
+            const activity = activities.find(a => a._id === actId);
+            txData = {
+                type, timestamp, ninja: playerName, date, sensei,
+                activityName:    activity?.name || '',
+                pointsEarned:    points,
+                activityDetails,
+                pointsRedeemed:  0,
+                itemBought:      '',
+            };
         } else {
             const points     = parseInt(document.getElementById('txPointsRedeem').value, 10);
             const itemBought = document.getElementById('txItemBought').value.trim();
 
             if (!points || points < 1) { toast('Enter a valid CC Redeemed amount!'); return; }
 
-            const bal = getSheetBalance(playerName);
+            const bal = getBalance(playerName);
             if (points > bal.current) { toast(`Not enough coins! Balance: ${bal.current}`); return; }
 
-            tx.unshift({ id: genId(), type, timestamp, playerName, date, sensei, points, itemBought });
-            LS.set('cc_transactions', tx);
-            toast(`${points} coins redeemed!`);
-
-            document.getElementById('txPointsRedeem').value = '';
-            document.getElementById('txItemBought').value   = '';
+            txData = {
+                type, timestamp, ninja: playerName, date, sensei,
+                activityName:    '',
+                pointsEarned:    0,
+                activityDetails: '',
+                pointsRedeemed:  points,
+                itemBought,
+            };
         }
 
-        document.getElementById('txStudent').value = '';
-        document.getElementById('txSensei').value  = '';
-        document.getElementById('balanceBanner').classList.remove('visible');
-        document.getElementById('earn').checked = true;
-        onTypeChange();
-        renderTransactions();
+        try {
+            const saved = await api('POST', '/api/transactions', txData);
+            mongoTransactions.unshift(saved);
+            computeAllPlayers();
+
+            if (type === 'earn') {
+                document.getElementById('txActivity').value        = '';
+                document.getElementById('txPoints').value          = '';
+                document.getElementById('txActivityDetails').value = '';
+                toast(`+${txData.pointsEarned} coins earned!`);
+            } else {
+                document.getElementById('txPointsRedeem').value = '';
+                document.getElementById('txItemBought').value   = '';
+                toast(`${txData.pointsRedeemed} coins redeemed!`);
+            }
+
+            document.getElementById('txStudent').value = '';
+            document.getElementById('txSensei').value  = '';
+            document.getElementById('balanceBanner').classList.remove('visible');
+            document.getElementById('earn').checked = true;
+            onTypeChange();
+            renderTransactions();
+        } catch { toast('Error saving transaction!'); }
     }
 
-    function toISODate(str) {
-        // Convert "M/D/YYYY" → "YYYY-MM-DD" for reliable string comparison
-        if (!str) return '';
-        const p = str.split('/');
-        if (p.length !== 3) return '';
-        return `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
-    }
-
+    // ── Transaction table ─────────────────────────────────────────────────────
     function renderTransactions() {
         const filterPlayer = document.getElementById('filterStudent').value;
         const filterFrom   = document.getElementById('filterFrom').value;
         const filterTo     = document.getElementById('filterTo').value;
 
-        let rows = sheetTransactions.filter(t => {
+        const allTx = [
+            ...sheetTransactions,
+            ...mongoTransactions.map(normMongo),
+        ].sort((a, b) => {
+            const da = toISODate(a.date); const db = toISODate(b.date);
+            return db.localeCompare(da);
+        });
+
+        let rows = allTx.filter(t => {
             if (filterPlayer && t.ninja !== filterPlayer) return false;
             const iso = toISODate(t.date);
             if (filterFrom && iso && iso < filterFrom) return false;
@@ -882,35 +913,25 @@
             return true;
         });
 
-        const totalEarned   = rows.reduce((s, t) => s + t.pointsEarned,   0);
-        const totalRedeemed = rows.reduce((s, t) => s + t.pointsRedeemed, 0);
-        document.getElementById('sumEarned').textContent   = totalEarned;
-        document.getElementById('sumRedeemed').textContent = totalRedeemed;
+        document.getElementById('sumEarned').textContent   = rows.reduce((s, t) => s + (t.pointsEarned   || 0), 0);
+        document.getElementById('sumRedeemed').textContent = rows.reduce((s, t) => s + (t.pointsRedeemed || 0), 0);
 
         const tbody = document.getElementById('txBody');
         if (!rows.length) {
-            tbody.innerHTML = '<tr><td colspan="9" class="empty-msg">No transactions found...</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" class="empty-msg">No transactions found...</td></tr>';
             return;
         }
 
-        tbody.innerHTML = rows.slice(0, 100).map(t => `<tr>
-            <td>${t.date}</td>
+        tbody.innerHTML = rows.slice(0, 200).map(t => `<tr>
+            <td>${fmtDate(t.date)}</td>
             <td style="font-weight:700">${t.ninja}</td>
-            <td class="${t.pointsEarned ? 'pts-earn' : ''}">${t.pointsEarned || '--'}</td>
+            <td class="${t.pointsEarned   ? 'pts-earn'   : ''}">${t.pointsEarned   || '--'}</td>
             <td class="${t.pointsRedeemed ? 'pts-redeem' : ''}">${t.pointsRedeemed || '--'}</td>
-            <td>${t.activity || '--'}</td>
+            <td>${t.activity   || '--'}</td>
             <td style="color:#64748B;font-size:0.9rem">${t.itemBought || '--'}</td>
             <td style="color:#64748B;font-size:0.85rem">${t.timestamp}</td>
             <td>${t.sensei}</td>
         </tr>`).join('');
-    }
-
-    function deleteTransaction(id) {
-        if (!confirm('Delete this transaction?')) return;
-        LS.set('cc_transactions', LS.get('cc_transactions').filter(t => t.id !== id));
-        toast('Transaction deleted.');
-        renderTransactions();
-        onStudentChange();
     }
 
     function clearFilters() {
@@ -928,11 +949,40 @@
         });
     }
 
-    function initPage() {
+    // ── Init ─────────────────────────────────────────────────────────────────
+    async function initPage() {
         document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
         refreshTimestamp();
         setInterval(refreshTimestamp, 1000);
-        fetchSheetData();
+
+        document.getElementById('txStudent').innerHTML = '<option value="">Loading...</option>';
+
+        await Promise.all([
+            fetchSheetData(),
+            loadMongoTransactions(),
+            loadSenseis(),
+            loadActivities(),
+        ]);
+
+        computeAllPlayers();
+
+        // Default filter: last 2 days of actual data
+        const allDates = [
+            ...sheetTransactions.map(t => toISODate(t.date)),
+            ...mongoTransactions.map(t => toISODate(t.date)),
+        ].filter(Boolean);
+
+        if (allDates.length) {
+            const maxDate   = allDates.reduce((a, b) => a > b ? a : b);
+            const [y, m, d] = maxDate.split('-').map(Number);
+            const fromObj   = new Date(y, m - 1, d - 2);
+            const fmt       = dt => dt.toISOString().split('T')[0];
+            document.getElementById('filterTo').value   = maxDate;
+            document.getElementById('filterFrom').value = fmt(fromObj);
+        }
+
+        populateDropdowns();
+        renderTransactions();
     }
 
 </script>

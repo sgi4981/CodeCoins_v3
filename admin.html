@@ -539,11 +539,14 @@
         }
     }
 
-    const LS = {
-        get: k => { try { return JSON.parse(localStorage.getItem(k)) || []; } catch { return []; } },
-        set: (k, v) => localStorage.setItem(k, JSON.stringify(v))
-    };
-    const genId = () => '_' + Math.random().toString(36).slice(2, 9);
+    // ── In-memory state (sourced from MongoDB via API) ───────────────────────
+    let ninjas     = [];
+    let senseis    = [];
+    let activities = [];
+    let editingNinjaId    = null;
+    let editingSenseiId   = null;
+    let editingActivityId = null;
+    let ninjaStatusFilter = 'All';
 
     function toast(msg) {
         const t = document.getElementById('toast');
@@ -551,6 +554,23 @@
         t.classList.add('show');
         setTimeout(() => t.classList.remove('show'), 2500);
     }
+
+    function escHtml(s) {
+        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── API helpers ──────────────────────────────────────────────────────────
+    async function api(method, path, body) {
+        const opts = { method, headers: {} };
+        if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+        const r = await fetch(path, opts);
+        if (!r.ok) throw new Error(await r.text());
+        return r.json();
+    }
+
+    async function loadNinjas()     { try { ninjas     = await api('GET', '/api/ninjas');     } catch { toast('Error loading ninjas!');     ninjas     = []; } }
+    async function loadSenseis()    { try { senseis    = await api('GET', '/api/senseis');    } catch { toast('Error loading senseis!');    senseis    = []; } }
+    async function loadActivities() { try { activities = await api('GET', '/api/activities'); } catch { toast('Error loading activities!'); activities = []; } }
 
     function switchTab(name, btn) {
         document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
@@ -560,59 +580,30 @@
         renderAll();
     }
 
-    function renderAll() {
-        Promise.all([ensureNinjasLoaded(), ensureSenseisLoaded(), ensureActivitiesLoaded()]).then(() => {
-            renderNinjas();
-            renderSenseis();
-            renderActivities();
-        });
+    async function renderAll() {
+        await Promise.all([loadNinjas(), loadSenseis(), loadActivities()]);
+        renderNinjas();
+        renderSenseis();
+        renderActivities();
     }
 
-    function escHtml(s) {
-        return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-
-    async function ensureNinjasLoaded() {
-        if (localStorage.getItem('cc_ninjas_seeded')) return;
-        try {
-            const res  = await fetch('NinjaList.json');
-            const data = await res.json();
-            const ninjas = data.map(n => ({
-                id:        genId(),
-                fullName:  n['Ninja Full Name'] || '',
-                shortName: n['Ninja'] || '',
-                status:    n['Status'] || 'Active'
-            }));
-            LS.set('cc_ninjas', ninjas);
-            localStorage.setItem('cc_ninjas_seeded', '1');
-        } catch {
-            if (!localStorage.getItem('cc_ninjas_seeded')) {
-                LS.set('cc_ninjas', []);
-                localStorage.setItem('cc_ninjas_seeded', '1');
-            }
-        }
-    }
-
-    let editingNinjaId = null;
-    let ninjaStatusFilter = 'All';
-
+    // ── Ninjas ───────────────────────────────────────────────────────────────
     function setNinjaFilter(value) {
         ninjaStatusFilter = value;
         ['All', 'Active', 'Inactive'].forEach(v => {
             const btn = document.getElementById('filter' + v);
             if (!btn) return;
             const isActive = v === value;
-            btn.style.background     = isActive ? 'var(--brand-600)' : '#fff';
-            btn.style.color          = isActive ? '#fff' : '#64748B';
-            btn.style.borderColor    = isActive ? 'var(--brand-500)' : '#DCE3E6';
+            btn.style.background  = isActive ? 'var(--brand-600)' : '#fff';
+            btn.style.color       = isActive ? '#fff' : '#64748B';
+            btn.style.borderColor = isActive ? 'var(--brand-500)' : '#DCE3E6';
         });
         renderNinjas();
     }
 
     function renderNinjas() {
-        const ninjas = LS.get('cc_ninjas');
-        const query  = (document.getElementById('ninjaSearch')?.value || '').trim().toLowerCase();
-        const list   = ninjas.filter(n => {
+        const query = (document.getElementById('ninjaSearch')?.value || '').trim().toLowerCase();
+        const list  = ninjas.filter(n => {
             const matchSearch = !query || n.fullName.toLowerCase().includes(query) || n.shortName.toLowerCase().includes(query);
             const matchStatus = ninjaStatusFilter === 'All' || (n.status || 'Active') === ninjaStatusFilter;
             return matchSearch && matchStatus;
@@ -620,16 +611,16 @@
         const el = document.getElementById('ninjaList');
         if (!list.length) { el.innerHTML = '<div class="empty-msg">No ninjas found...</div>'; return; }
         el.innerHTML = list.map(n => {
-            if (n.id === editingNinjaId) {
-                return `<div class="item-row" id="ninja-row-${n.id}">
+            if (n._id === editingNinjaId) {
+                return `<div class="item-row" id="ninja-row-${n._id}">
                     <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
-                        <input id="edit-full-${n.id}" value="${escHtml(n.fullName)}" placeholder="Full Name"
+                        <input id="edit-full-${n._id}" value="${escHtml(n.fullName)}" placeholder="Full Name"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:140px;outline:none">
-                        <input id="edit-short-${n.id}" value="${escHtml(n.shortName)}" placeholder="Short Name"
+                        <input id="edit-short-${n._id}" value="${escHtml(n.shortName)}" placeholder="Short Name"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:100px;outline:none">
                     </div>
                     <div style="display:flex;gap:6px;margin-left:10px">
-                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveNinja('${n.id}')">✓ Save</button>
+                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveNinja('${n._id}')">✓ Save</button>
                         <button class="btn-danger" onclick="cancelNinjaEdit()">✕</button>
                     </div>
                 </div>`;
@@ -639,295 +630,242 @@
             const statusStyle = isActive
                 ? 'background:rgba(18,197,154,0.15);border:1px solid rgba(18,197,154,0.35);color:#0FAE88;'
                 : 'background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);color:#64748B;';
-            return `<div class="item-row" id="ninja-row-${n.id}">
+            return `<div class="item-row" id="ninja-row-${n._id}">
                 <div class="item-info">
                     <span class="item-name">🥷 ${escHtml(n.fullName)}</span>
                     <span class="item-sub">${escHtml(n.shortName)}</span>
                 </div>
                 <div style="display:flex;gap:6px;align-items:center">
-                    <button onclick="toggleNinjaStatus('${n.id}')"
+                    <button onclick="toggleNinjaStatus('${n._id}')"
                             style="padding:7px 14px;font-size:0.82rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;transition:all .15s;${statusStyle}">${escHtml(status)}</button>
-                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditNinja('${n.id}')">✎ Edit</button>
-                    <button class="btn-danger" onclick="deleteNinja('${n.id}')">🗑 Remove</button>
+                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditNinja('${n._id}')">✎ Edit</button>
+                    <button class="btn-danger" onclick="deleteNinja('${n._id}')">🗑 Remove</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-    function startEditNinja(id) {
-        editingNinjaId = id;
-        renderNinjas();
-        document.getElementById('edit-full-' + id)?.focus();
-    }
+    function startEditNinja(id) { editingNinjaId = id; renderNinjas(); document.getElementById('edit-full-' + id)?.focus(); }
+    function cancelNinjaEdit()  { editingNinjaId = null; renderNinjas(); }
 
-    function saveNinja(id) {
+    async function saveNinja(id) {
         const fullName  = document.getElementById('edit-full-' + id)?.value.trim();
         const shortName = document.getElementById('edit-short-' + id)?.value.trim();
         if (!fullName) { toast('Full name cannot be empty!'); return; }
-        const ninjas = LS.get('cc_ninjas');
-        const idx = ninjas.findIndex(n => n.id === id);
-        if (idx !== -1) { ninjas[idx].fullName = fullName; ninjas[idx].shortName = shortName; }
-        LS.set('cc_ninjas', ninjas);
-        editingNinjaId = null;
-        toast('Ninja updated!');
-        renderNinjas();
-    }
-
-    function cancelNinjaEdit() {
-        editingNinjaId = null;
-        renderNinjas();
-    }
-
-    function toggleNinjaStatus(id) {
-        const ninjas = LS.get('cc_ninjas');
-        const idx = ninjas.findIndex(n => n.id === id);
-        if (idx !== -1) {
-            ninjas[idx].status = (ninjas[idx].status || 'Active') === 'Active' ? 'Inactive' : 'Active';
-            LS.set('cc_ninjas', ninjas);
-            renderNinjas();
-        }
-    }
-
-    async function ensureSenseisLoaded() {
-        if (localStorage.getItem('cc_senseis_seeded')) return;
         try {
-            const res  = await fetch('SenseiList.json');
-            const data = await res.json();
-            const senseis = data.map(s => ({ id: genId(), name: s['Sensei'] || '' }));
-            LS.set('cc_senseis', senseis);
-            localStorage.setItem('cc_senseis_seeded', '1');
-        } catch {
-            if (!localStorage.getItem('cc_senseis_seeded')) {
-                LS.set('cc_senseis', []);
-                localStorage.setItem('cc_senseis_seeded', '1');
-            }
-        }
+            await api('PUT', '/api/ninjas', { _id: id, fullName, shortName });
+            const idx = ninjas.findIndex(n => n._id === id);
+            if (idx !== -1) { ninjas[idx].fullName = fullName; ninjas[idx].shortName = shortName; }
+            editingNinjaId = null;
+            toast('Ninja updated!');
+            renderNinjas();
+        } catch { toast('Error updating ninja!'); }
     }
 
-    let editingSenseiId = null;
+    async function toggleNinjaStatus(id) {
+        const idx = ninjas.findIndex(n => n._id === id);
+        if (idx === -1) return;
+        const newStatus = (ninjas[idx].status || 'Active') === 'Active' ? 'Inactive' : 'Active';
+        try {
+            await api('PUT', '/api/ninjas', { _id: id, status: newStatus });
+            ninjas[idx].status = newStatus;
+            renderNinjas();
+        } catch { toast('Error updating status!'); }
+    }
 
+    async function addNinja() {
+        const fullName  = document.getElementById('newNinjaFullName').value.trim();
+        const shortName = document.getElementById('newNinjaShortName').value.trim();
+        if (!fullName) { toast('Enter a full name!'); return; }
+        try {
+            const ninja = await api('POST', '/api/ninjas', { fullName, shortName, status: 'Active' });
+            ninjas.push(ninja);
+            document.getElementById('newNinjaFullName').value  = '';
+            document.getElementById('newNinjaShortName').value = '';
+            toast('Ninja added!');
+            renderNinjas();
+        } catch { toast('Error adding ninja!'); }
+    }
+
+    async function deleteNinja(id) {
+        if (!confirm('Remove this ninja?')) return;
+        try {
+            await api('DELETE', '/api/ninjas?id=' + id);
+            ninjas = ninjas.filter(n => n._id !== id);
+            toast('Ninja removed.');
+            renderNinjas();
+        } catch { toast('Error removing ninja!'); }
+    }
+
+    function exportNinjas() {
+        const out  = ninjas.map(n => ({ 'Ninja Full Name': n.fullName, 'Ninja': n.shortName, 'Status': n.status || 'Active' }));
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const a    = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'NinjaList.json'; a.click();
+        URL.revokeObjectURL(a.href);
+        toast('NinjaList.json downloaded!');
+    }
+
+    // ── Senseis ──────────────────────────────────────────────────────────────
     function renderSenseis() {
-        const senseis = LS.get('cc_senseis');
-        const query   = (document.getElementById('senseiSearch')?.value || '').trim().toLowerCase();
-        const list    = query ? senseis.filter(s => s.name.toLowerCase().includes(query)) : senseis;
+        const query = (document.getElementById('senseiSearch')?.value || '').trim().toLowerCase();
+        const list  = query ? senseis.filter(s => s.name.toLowerCase().includes(query)) : senseis;
         const el = document.getElementById('senseiList');
         if (!list.length) { el.innerHTML = '<div class="empty-msg">No senseis found...</div>'; return; }
         el.innerHTML = list.map(s => {
-            if (s.id === editingSenseiId) {
-                return `<div class="item-row" id="sensei-row-${s.id}">
+            if (s._id === editingSenseiId) {
+                return `<div class="item-row" id="sensei-row-${s._id}">
                     <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap">
-                        <input id="edit-sensei-${s.id}" value="${escHtml(s.name)}" placeholder="Sensei Name"
+                        <input id="edit-sensei-${s._id}" value="${escHtml(s.name)}" placeholder="Sensei Name"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:140px;outline:none">
                     </div>
                     <div style="display:flex;gap:6px;margin-left:10px">
-                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveSensei('${s.id}')">✓ Save</button>
+                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveSensei('${s._id}')">✓ Save</button>
                         <button class="btn-danger" onclick="cancelSenseiEdit()">✕</button>
                     </div>
                 </div>`;
             }
-            return `<div class="item-row" id="sensei-row-${s.id}">
+            return `<div class="item-row" id="sensei-row-${s._id}">
                 <div class="item-info">
                     <span class="item-name">🥋 ${escHtml(s.name)}</span>
                 </div>
                 <div style="display:flex;gap:6px">
-                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditSensei('${s.id}')">✎ Edit</button>
-                    <button class="btn-danger" onclick="deleteSensei('${s.id}')">🗑 Remove</button>
+                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditSensei('${s._id}')">✎ Edit</button>
+                    <button class="btn-danger" onclick="deleteSensei('${s._id}')">🗑 Remove</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-    function startEditSensei(id) {
-        editingSenseiId = id;
-        renderSenseis();
-        document.getElementById('edit-sensei-' + id)?.focus();
-    }
+    function startEditSensei(id) { editingSenseiId = id; renderSenseis(); document.getElementById('edit-sensei-' + id)?.focus(); }
+    function cancelSenseiEdit()  { editingSenseiId = null; renderSenseis(); }
 
-    function saveSensei(id) {
+    async function saveSensei(id) {
         const name = document.getElementById('edit-sensei-' + id)?.value.trim();
         if (!name) { toast('Sensei name cannot be empty!'); return; }
-        const senseis = LS.get('cc_senseis');
-        const idx = senseis.findIndex(s => s.id === id);
-        if (idx !== -1) senseis[idx].name = name;
-        LS.set('cc_senseis', senseis);
-        editingSenseiId = null;
-        toast('Sensei updated!');
-        renderSenseis();
-    }
-
-    function cancelSenseiEdit() {
-        editingSenseiId = null;
-        renderSenseis();
-    }
-
-    async function ensureActivitiesLoaded() {
-        if (localStorage.getItem('cc_activities_seeded')) return;
         try {
-            const res  = await fetch('EarnPointsList.json');
-            const data = await res.json();
-            const activities = data.map(a => ({ id: genId(), name: a['Activity'] || '', coins: parseInt(a['Code Coins']) || 0 }));
-            LS.set('cc_activities', activities);
-            localStorage.setItem('cc_activities_seeded', '1');
-        } catch {
-            if (!localStorage.getItem('cc_activities_seeded')) {
-                LS.set('cc_activities', []);
-                localStorage.setItem('cc_activities_seeded', '1');
-            }
-        }
+            await api('PUT', '/api/senseis', { _id: id, name });
+            const idx = senseis.findIndex(s => s._id === id);
+            if (idx !== -1) senseis[idx].name = name;
+            editingSenseiId = null;
+            toast('Sensei updated!');
+            renderSenseis();
+        } catch { toast('Error updating sensei!'); }
     }
 
-    let editingActivityId = null;
+    async function addSensei() {
+        const name = document.getElementById('newSenseiName').value.trim();
+        if (!name) { toast('Enter a sensei name!'); return; }
+        try {
+            const sensei = await api('POST', '/api/senseis', { name });
+            senseis.push(sensei);
+            document.getElementById('newSenseiName').value = '';
+            toast('Sensei added!');
+            renderSenseis();
+        } catch { toast('Error adding sensei!'); }
+    }
 
+    async function deleteSensei(id) {
+        if (!confirm('Remove this sensei?')) return;
+        try {
+            await api('DELETE', '/api/senseis?id=' + id);
+            senseis = senseis.filter(s => s._id !== id);
+            toast('Sensei removed.');
+            renderSenseis();
+        } catch { toast('Error removing sensei!'); }
+    }
+
+    function exportSenseis() {
+        const out  = senseis.map(s => ({ 'Sensei': s.name }));
+        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
+        const a    = document.createElement('a');
+        a.href = URL.createObjectURL(blob); a.download = 'SenseiList.json'; a.click();
+        URL.revokeObjectURL(a.href);
+        toast('SenseiList.json downloaded!');
+    }
+
+    // ── Activities ───────────────────────────────────────────────────────────
     function renderActivities() {
-        const activities = LS.get('cc_activities');
         const query = (document.getElementById('activitySearch')?.value || '').trim().toLowerCase();
         const list  = query ? activities.filter(a => a.name.toLowerCase().includes(query)) : activities;
         const el = document.getElementById('activityList');
         if (!list.length) { el.innerHTML = '<div class="empty-msg">No activities found...</div>'; return; }
         el.innerHTML = list.map(a => {
-            if (a.id === editingActivityId) {
-                return `<div class="item-row" id="activity-row-${a.id}">
+            if (a._id === editingActivityId) {
+                return `<div class="item-row" id="activity-row-${a._id}">
                     <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap;align-items:center">
-                        <input id="edit-activity-name-${a.id}" value="${escHtml(a.name)}" placeholder="Activity Name"
+                        <input id="edit-activity-name-${a._id}" value="${escHtml(a.name)}" placeholder="Activity Name"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:180px;outline:none">
-                        <input id="edit-activity-coins-${a.id}" value="${a.coins}" placeholder="Coins" type="number" min="1"
+                        <input id="edit-activity-coins-${a._id}" value="${a.coins}" placeholder="Coins" type="number" min="1"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;width:90px;outline:none">
                     </div>
                     <div style="display:flex;gap:6px;margin-left:10px">
-                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveActivity('${a.id}')">✓ Save</button>
+                        <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="saveActivity('${a._id}')">✓ Save</button>
                         <button class="btn-danger" onclick="cancelActivityEdit()">✕</button>
                     </div>
                 </div>`;
             }
-            return `<div class="item-row" id="activity-row-${a.id}">
+            return `<div class="item-row" id="activity-row-${a._id}">
                 <div style="display:flex;align-items:center;gap:10px;flex:1">
                     <span class="points-pill">💰 ${a.coins}</span>
                     <div class="item-info"><span class="item-name">${escHtml(a.name)}</span></div>
                 </div>
                 <div style="display:flex;gap:6px">
-                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditActivity('${a.id}')">✎ Edit</button>
-                    <button class="btn-danger" onclick="deleteActivity('${a.id}')">🗑 Remove</button>
+                    <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditActivity('${a._id}')">✎ Edit</button>
+                    <button class="btn-danger" onclick="deleteActivity('${a._id}')">🗑 Remove</button>
                 </div>
             </div>`;
         }).join('');
     }
 
-    function startEditActivity(id) {
-        editingActivityId = id;
-        renderActivities();
-        document.getElementById('edit-activity-name-' + id)?.focus();
-    }
+    function startEditActivity(id) { editingActivityId = id; renderActivities(); document.getElementById('edit-activity-name-' + id)?.focus(); }
+    function cancelActivityEdit()  { editingActivityId = null; renderActivities(); }
 
-    function saveActivity(id) {
+    async function saveActivity(id) {
         const name  = document.getElementById('edit-activity-name-' + id)?.value.trim();
         const coins = parseInt(document.getElementById('edit-activity-coins-' + id)?.value, 10);
-        if (!name)             { toast('Activity name cannot be empty!'); return; }
+        if (!name)               { toast('Activity name cannot be empty!'); return; }
         if (!coins || coins < 1) { toast('Enter a valid coin value!'); return; }
-        const activities = LS.get('cc_activities');
-        const idx = activities.findIndex(a => a.id === id);
-        if (idx !== -1) { activities[idx].name = name; activities[idx].coins = coins; }
-        LS.set('cc_activities', activities);
-        editingActivityId = null;
-        toast('Activity updated!');
-        renderActivities();
+        try {
+            await api('PUT', '/api/activities', { _id: id, name, coins });
+            const idx = activities.findIndex(a => a._id === id);
+            if (idx !== -1) { activities[idx].name = name; activities[idx].coins = coins; }
+            editingActivityId = null;
+            toast('Activity updated!');
+            renderActivities();
+        } catch { toast('Error updating activity!'); }
     }
 
-    function cancelActivityEdit() {
-        editingActivityId = null;
-        renderActivities();
-    }
-
-    function addNinja() {
-        const fullName  = document.getElementById('newNinjaFullName').value.trim();
-        const shortName = document.getElementById('newNinjaShortName').value.trim();
-        if (!fullName) { toast('Enter a full name!'); return; }
-        const ninjas = LS.get('cc_ninjas');
-        ninjas.push({ id: genId(), fullName, shortName, status: 'Active' });
-        LS.set('cc_ninjas', ninjas);
-        document.getElementById('newNinjaFullName').value  = '';
-        document.getElementById('newNinjaShortName').value = '';
-        toast('Ninja added!');
-        renderNinjas();
-    }
-
-    function deleteNinja(id) {
-        if (!confirm('Remove this ninja?')) return;
-        LS.set('cc_ninjas', LS.get('cc_ninjas').filter(n => n.id !== id));
-        toast('Ninja removed.');
-        renderNinjas();
-    }
-
-    function exportNinjas() {
-        const ninjas = LS.get('cc_ninjas');
-        const out = ninjas.map(n => ({ 'Ninja Full Name': n.fullName, 'Ninja': n.shortName, 'Status': n.status || 'Active' }));
-        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'NinjaList.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        toast('NinjaList.json downloaded!');
-    }
-
-    function addSensei() {
-        const name = document.getElementById('newSenseiName').value.trim();
-        if (!name) { toast('Enter a sensei name!'); return; }
-        const senseis = LS.get('cc_senseis');
-        senseis.push({ id: genId(), name });
-        LS.set('cc_senseis', senseis);
-        document.getElementById('newSenseiName').value = '';
-        toast('Sensei added!');
-        renderSenseis();
-    }
-
-    function deleteSensei(id) {
-        if (!confirm('Remove this sensei?')) return;
-        LS.set('cc_senseis', LS.get('cc_senseis').filter(s => s.id !== id));
-        toast('Sensei removed.');
-        renderSenseis();
-    }
-
-    function exportSenseis() {
-        const senseis = LS.get('cc_senseis');
-        const out  = senseis.map(s => ({ 'Sensei': s.name }));
-        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-        const a    = document.createElement('a');
-        a.href     = URL.createObjectURL(blob);
-        a.download = 'SenseiList.json';
-        a.click();
-        URL.revokeObjectURL(a.href);
-        toast('SenseiList.json downloaded!');
-    }
-
-    function addActivity() {
+    async function addActivity() {
         const name  = document.getElementById('newActivityName').value.trim();
         const coins = parseInt(document.getElementById('newActivityCoins').value, 10);
-        if (!name)             { toast('Enter an activity name!'); return; }
+        if (!name)               { toast('Enter an activity name!'); return; }
         if (!coins || coins < 1) { toast('Enter a valid coin value!'); return; }
-        const activities = LS.get('cc_activities');
-        activities.push({ id: genId(), name, coins });
-        LS.set('cc_activities', activities);
-        document.getElementById('newActivityName').value  = '';
-        document.getElementById('newActivityCoins').value = '';
-        toast('Activity added!');
-        renderActivities();
+        try {
+            const activity = await api('POST', '/api/activities', { name, coins });
+            activities.push(activity);
+            document.getElementById('newActivityName').value  = '';
+            document.getElementById('newActivityCoins').value = '';
+            toast('Activity added!');
+            renderActivities();
+        } catch { toast('Error adding activity!'); }
     }
 
-    function deleteActivity(id) {
+    async function deleteActivity(id) {
         if (!confirm('Remove this activity?')) return;
-        LS.set('cc_activities', LS.get('cc_activities').filter(a => a.id !== id));
-        toast('Activity removed.');
-        renderActivities();
+        try {
+            await api('DELETE', '/api/activities?id=' + id);
+            activities = activities.filter(a => a._id !== id);
+            toast('Activity removed.');
+            renderActivities();
+        } catch { toast('Error removing activity!'); }
     }
 
     function exportActivities() {
-        const activities = LS.get('cc_activities');
         const out  = activities.map(a => ({ 'Activity': a.name, 'Code Coins': String(a.coins) }));
         const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
         const a    = document.createElement('a');
-        a.href     = URL.createObjectURL(blob);
-        a.download = 'EarnPointsList.json';
-        a.click();
+        a.href = URL.createObjectURL(blob); a.download = 'EarnPointsList.json'; a.click();
         URL.revokeObjectURL(a.href);
         toast('EarnPointsList.json downloaded!');
     }
