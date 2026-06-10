@@ -1,6 +1,5 @@
 const { ObjectId } = require('mongodb');
 const { getDb } = require('./_db');
-const SEED_DATA = require('./ninjaList.json');
 
 const cors = (res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -18,14 +17,6 @@ module.exports = async function(req, res) {
         const col = db.collection('ninjaList');
 
         if (req.method === 'GET') {
-            if (await col.countDocuments() === 0) {
-                const docs = SEED_DATA.map(n => ({
-                    fullName:  n['Ninja Full Name'] || '',
-                    shortName: n['Ninja']           || '',
-                    status:    n['Status']          || 'Active',
-                })).filter(n => n.fullName);
-                if (docs.length) await col.insertMany(docs);
-            }
             const docs = await col.find({}).sort({ fullName: 1 }).toArray();
             return res.json(docs.map(serial));
         }
