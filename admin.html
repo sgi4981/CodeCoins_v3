@@ -138,7 +138,7 @@
             z-index: 1;
         }
 
-        .header { text-align: center; padding: 48px 0 20px; }
+        .header { text-align: center; padding: 16px 0 10px; }
 
         .header h1 {
             font-family: 'Poppins', sans-serif;
@@ -164,33 +164,48 @@
         }
 
         /* ── Nav ── */
-        .nav {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 20px 0;
-        }
-
-        .nav a {
-            padding: 10px 24px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #64748B;
+        .star-btn {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 200;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
             background: #FFFFFF;
             border: 1px solid #DCE3E6;
-            border-radius: var(--r-xl);
-            box-shadow: 0 1px 3px rgba(13,43,69,0.06);
+            box-shadow: 0 4px 14px rgba(13,43,69,0.12);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s var(--ease);
         }
+        .star-btn:hover { box-shadow: 0 6px 20px rgba(13,43,69,0.2); transform: scale(1.05); }
+        .star-btn .bar { display: block; width: 20px; height: 2px; background: #156EB5; border-radius: 2px; margin: 3px 0; }
 
-        .nav a.active, .nav a:hover {
-            background: var(--brand-600);
-            border-color: var(--brand-500);
-            color: #FFF;
-            box-shadow: 0 4px 14px rgba(21,110,181,0.4);
+        .star-menu {
+            position: fixed;
+            top: 74px;
+            right: 24px;
+            z-index: 200;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-2xl);
+            box-shadow: 0 10px 30px rgba(13,43,69,0.15);
+            padding: 20px;
+            width: 220px;
+            animation: menuSlide 0.18s var(--ease);
         }
+        .star-menu.hidden { display: none; }
+        @keyframes menuSlide {
+            from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .star-menu-title { font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+        .role-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; margin-bottom: 8px; background: #F6F8F8; border: 1px solid #DCE3E6; border-radius: var(--r-xl); font-family: 'Nunito Sans', sans-serif; font-size: 0.95rem; font-weight: 700; color: #334155; cursor: pointer; transition: all 0.15s var(--ease); text-align: left; }
+        .role-btn:last-child { margin-bottom: 0; }
+        .role-btn:hover { background: var(--brand-600); border-color: var(--brand-600); color: #FFF; }
 
         /* ── Tabs ── */
         .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
@@ -324,13 +339,13 @@
         }
 
         /* ── Item lists ── */
-        .item-list { margin-top: 8px; display: flex; flex-direction: column; gap: 8px; }
+        .item-list { margin-top: 6px; display: flex; flex-direction: column; gap: 5px; }
 
         .item-row {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 14px 18px;
+            padding: 7px 14px;
             background: #F6F8F8;
             border: 1px solid #DCE3E6;
             border-radius: var(--r-xl);
@@ -405,21 +420,30 @@
     </div>
 </div>
 
+<!-- Hamburger nav button -->
+<button class="star-btn" id="starBtn" onclick="toggleStarMenu(event)" title="Navigate">
+    <span style="display:flex;flex-direction:column;align-items:center;">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </span>
+</button>
+
+<!-- Nav dropdown menu -->
+<div class="star-menu hidden" id="starMenu">
+    <div class="star-menu-title">Navigate</div>
+    <button class="role-btn" onclick="window.location.href='index.html'">🏆 Leaderboard</button>
+    <button class="role-btn" onclick="window.location.href='staff.html'">📜 Staff</button>
+</div>
+
 <!-- Page content -->
 <div id="pageContent">
     <div class="container">
         <div class="header">
             <h1>⚙ Admin Panel</h1>
-            <div class="subtitle">*** Reference Data Management ***</div>
         </div>
 
         <div class="mc-divider"></div>
-
-        <nav class="nav">
-            <a href="index.html">🏆 Leaderboard</a>
-            <a href="admin.html" class="active">⚙ Admin</a>
-            <a href="staff.html">📜 Staff</a>
-        </nav>
 
         <div class="tabs">
             <button class="tab-btn active" onclick="switchTab('students', this)">🥷 Ninjas</button>
@@ -429,8 +453,8 @@
 
         <!-- Ninjas -->
         <div id="tab-students" class="tab-panel active">
-            <div class="card">
-                <h3>Add Ninja</h3>
+            <div class="card" style="padding:10px 28px">
+                <h3 style="margin-bottom:8px">Add Ninja</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Full Name</label>
@@ -443,8 +467,8 @@
                     <button class="btn btn-primary" onclick="addNinja()">+ Add Ninja</button>
                 </div>
             </div>
-            <div class="card">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+            <div class="card" style="padding:14px 28px">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:10px">
                     <h3 style="margin-bottom:0">All Ninjas</h3>
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <input type="text" id="ninjaSearch" placeholder="Search ninjas..." oninput="renderNinjas()"
@@ -454,7 +478,6 @@
                             <button id="filterActive"   onclick="setNinjaFilter('Active')"   style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid #DCE3E6;background:#fff;color:#64748B;transition:all .15s">Active</button>
                             <button id="filterInactive" onclick="setNinjaFilter('Inactive')" style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid #DCE3E6;background:#fff;color:#64748B;transition:all .15s">Inactive</button>
                         </div>
-                        <button class="btn btn-primary" onclick="exportNinjas()" style="padding:8px 16px;font-size:0.85rem">💾 Save Changes</button>
                     </div>
                 </div>
                 <div class="item-list" id="ninjaList"></div>
@@ -463,8 +486,8 @@
 
         <!-- Senseis -->
         <div id="tab-senseis" class="tab-panel">
-            <div class="card">
-                <h3>Add Sensei</h3>
+            <div class="card" style="padding:10px 28px">
+                <h3 style="margin-bottom:8px">Add Sensei</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Sensei Name</label>
@@ -479,7 +502,6 @@
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <input type="text" id="senseiSearch" placeholder="Search senseis..." oninput="renderSenseis()"
                                style="padding:8px 14px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s,box-shadow .2s">
-                        <button class="btn btn-primary" onclick="exportSenseis()" style="padding:8px 16px;font-size:0.85rem">💾 Save Changes</button>
                     </div>
                 </div>
                 <div class="item-list" id="senseiList"></div>
@@ -488,8 +510,8 @@
 
         <!-- Activities -->
         <div id="tab-activities" class="tab-panel">
-            <div class="card">
-                <h3>Add Activity</h3>
+            <div class="card" style="padding:10px 28px">
+                <h3 style="margin-bottom:8px">Add Activity</h3>
                 <div class="form-row">
                     <div class="form-group">
                         <label>Activity Name</label>
@@ -508,7 +530,6 @@
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <input type="text" id="activitySearch" placeholder="Search activities..." oninput="renderActivities()"
                                style="padding:8px 14px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s,box-shadow .2s">
-                        <button class="btn btn-primary" onclick="exportActivities()" style="padding:8px 16px;font-size:0.85rem">💾 Save Changes</button>
                     </div>
                 </div>
                 <div class="item-list" id="activityList"></div>
@@ -697,15 +718,6 @@
         } catch { toast('Error removing ninja!'); }
     }
 
-    function exportNinjas() {
-        const out  = ninjas.map(n => ({ 'Ninja Full Name': n.fullName, 'Ninja': n.shortName, 'Status': n.status || 'Active' }));
-        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-        const a    = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = 'NinjaList.json'; a.click();
-        URL.revokeObjectURL(a.href);
-        toast('NinjaList.json downloaded!');
-    }
-
     // ── Senseis ──────────────────────────────────────────────────────────────
     function renderSenseis() {
         const query = (document.getElementById('senseiSearch')?.value || '').trim().toLowerCase();
@@ -773,15 +785,6 @@
             toast('Sensei removed.');
             renderSenseis();
         } catch { toast('Error removing sensei!'); }
-    }
-
-    function exportSenseis() {
-        const out  = senseis.map(s => ({ 'Sensei': s.name }));
-        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-        const a    = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = 'SenseiList.json'; a.click();
-        URL.revokeObjectURL(a.href);
-        toast('SenseiList.json downloaded!');
     }
 
     // ── Activities ───────────────────────────────────────────────────────────
@@ -861,14 +864,15 @@
         } catch { toast('Error removing activity!'); }
     }
 
-    function exportActivities() {
-        const out  = activities.map(a => ({ 'Activity': a.name, 'Code Coins': String(a.coins) }));
-        const blob = new Blob([JSON.stringify(out, null, 2)], { type: 'application/json' });
-        const a    = document.createElement('a');
-        a.href = URL.createObjectURL(blob); a.download = 'EarnPointsList.json'; a.click();
-        URL.revokeObjectURL(a.href);
-        toast('EarnPointsList.json downloaded!');
+    function toggleStarMenu(e) {
+        e.stopPropagation();
+        document.getElementById('starMenu').classList.toggle('hidden');
     }
+    document.addEventListener('click', e => {
+        const menu = document.getElementById('starMenu');
+        if (menu && !menu.contains(e.target) && e.target !== document.getElementById('starBtn'))
+            menu.classList.add('hidden');
+    });
 
 </script>
 </body>

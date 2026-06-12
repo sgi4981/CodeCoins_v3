@@ -138,7 +138,7 @@
             z-index: 1;
         }
 
-        .header { text-align: center; padding: 48px 0 20px; }
+        .header { text-align: center; padding: 16px 0 10px; }
 
         .header h1 {
             font-family: 'Poppins', sans-serif;
@@ -163,33 +163,48 @@
             margin: 24px 0;
         }
 
-        .nav {
-            display: flex;
-            justify-content: center;
-            flex-wrap: wrap;
-            gap: 8px;
-            margin: 20px 0;
-        }
-
-        .nav a {
-            padding: 10px 24px;
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #64748B;
+        .star-btn {
+            position: fixed;
+            top: 20px;
+            right: 24px;
+            z-index: 200;
+            width: 46px;
+            height: 46px;
+            border-radius: 50%;
             background: #FFFFFF;
             border: 1px solid #DCE3E6;
-            border-radius: var(--r-xl);
-            box-shadow: 0 1px 3px rgba(13,43,69,0.06);
+            box-shadow: 0 4px 14px rgba(13,43,69,0.12);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             transition: all 0.2s var(--ease);
         }
+        .star-btn:hover { box-shadow: 0 6px 20px rgba(13,43,69,0.2); transform: scale(1.05); }
+        .star-btn .bar { display: block; width: 20px; height: 2px; background: #156EB5; border-radius: 2px; margin: 3px 0; }
 
-        .nav a.active, .nav a:hover {
-            background: var(--brand-600);
-            border-color: var(--brand-500);
-            color: #FFF;
-            box-shadow: 0 4px 14px rgba(21,110,181,0.4);
+        .star-menu {
+            position: fixed;
+            top: 74px;
+            right: 24px;
+            z-index: 200;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-2xl);
+            box-shadow: 0 10px 30px rgba(13,43,69,0.15);
+            padding: 20px;
+            width: 220px;
+            animation: menuSlide 0.18s var(--ease);
         }
+        .star-menu.hidden { display: none; }
+        @keyframes menuSlide {
+            from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .star-menu-title { font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; }
+        .role-btn { display: flex; align-items: center; gap: 10px; width: 100%; padding: 12px 14px; margin-bottom: 8px; background: #F6F8F8; border: 1px solid #DCE3E6; border-radius: var(--r-xl); font-family: 'Nunito Sans', sans-serif; font-size: 0.95rem; font-weight: 700; color: #334155; cursor: pointer; transition: all 0.15s var(--ease); text-align: left; }
+        .role-btn:last-child { margin-bottom: 0; }
+        .role-btn:hover { background: var(--brand-600); border-color: var(--brand-600); color: #FFF; }
 
         /* ── Cards ── */
         .card {
@@ -466,24 +481,33 @@
     </div>
 </div>
 
+<!-- Hamburger nav button -->
+<button class="star-btn" id="starBtn" onclick="toggleStarMenu(event)" title="Navigate">
+    <span style="display:flex;flex-direction:column;align-items:center;">
+        <span class="bar"></span>
+        <span class="bar"></span>
+        <span class="bar"></span>
+    </span>
+</button>
+
+<!-- Nav dropdown menu -->
+<div class="star-menu hidden" id="starMenu">
+    <div class="star-menu-title">Navigate</div>
+    <button class="role-btn" onclick="window.location.href='index.html'">🏆 Leaderboard</button>
+    <button class="role-btn" onclick="window.location.href='admin.html'">⚙️ Admin</button>
+</div>
+
 <!-- Page content -->
 <div id="pageContent">
     <div class="container">
         <div class="header">
             <h1>📜 Staff Panel</h1>
-            <div class="subtitle">*** Transaction Data Entry ***</div>
         </div>
 
         <div class="mc-divider"></div>
 
-        <nav class="nav">
-            <a href="index.html">🏆 Leaderboard</a>
-            <a href="admin.html">⚙ Admin</a>
-            <a href="staff.html" class="active">📜 Staff</a>
-        </nav>
-
         <!-- Sensei selector -->
-        <div class="card" style="padding:20px 28px">
+        <div class="card" style="padding:10px 28px">
             <div class="form-group">
                 <label>Sensei</label>
                 <select id="txSensei" style="max-width:320px">
@@ -493,8 +517,8 @@
         </div>
 
         <!-- Entry form -->
-        <div class="card">
-            <h3>Enter Coins Earned / Redeemed</h3>
+        <div class="card" style="padding:10px 28px">
+            <h3 style="margin-bottom:8px">Enter Coins Earned / Redeemed</h3>
 
             <!-- Type toggle -->
             <div class="form-grid" style="margin-bottom:0">
@@ -586,6 +610,7 @@
                 <select id="filterStudent" onchange="renderTransactions()">
                     <option value="">Select All</option>
                 </select>
+                <button class="btn btn-primary" onclick="refreshData()" style="padding:9px 16px;font-size:0.85rem">Search</button>
                 <button class="btn btn-primary" onclick="clearFilters()" style="padding:9px 16px;font-size:0.85rem">Clear Filters</button>
             </div>
 
@@ -651,6 +676,7 @@
     let allPlayers        = [];
     let senseis           = [];
     let activities        = [];
+    let ninjas            = [];
 
     // ── API helper ───────────────────────────────────────────────────────────
     async function api(method, path, body) {
@@ -661,6 +687,7 @@
         return r.json();
     }
 
+    async function loadNinjas()     { try { ninjas     = await api('GET', '/api/ninjas?activeOnly=1'); } catch { ninjas     = []; } }
     async function loadSenseis()    { try { senseis    = await api('GET', '/api/senseis');    } catch { senseis    = []; } }
     async function loadActivities() { try { activities = await api('GET', '/api/activities'); } catch { activities = []; } }
     async function loadMongoTransactions() { try { mongoTransactions = await api('GET', '/api/transactions'); } catch { mongoTransactions = []; } }
@@ -769,7 +796,11 @@
         const playerSel = document.getElementById('txStudent');
         const prev = playerSel.value;
         playerSel.innerHTML = '<option value="">-- Select Ninja --</option>' +
-            allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
+            ninjas
+                .filter(n => (n.status || 'Active').toLowerCase() !== 'inactive')
+                .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''))
+                .map(n => `<option value="${n.fullName}">${n.fullName}</option>`)
+                .join('');
         if (prev) playerSel.value = prev;
 
         const senseiSel = document.getElementById('txSensei');
@@ -934,6 +965,12 @@
         </tr>`).join('');
     }
 
+    async function refreshData() {
+        await loadMongoTransactions();
+        computeAllPlayers();
+        renderTransactions();
+    }
+
     function clearFilters() {
         document.getElementById('filterFrom').value    = '';
         document.getElementById('filterTo').value      = '';
@@ -960,6 +997,7 @@
         await Promise.all([
             fetchSheetData(),
             loadMongoTransactions(),
+            loadNinjas(),
             loadSenseis(),
             loadActivities(),
         ]);
@@ -984,6 +1022,16 @@
         populateDropdowns();
         renderTransactions();
     }
+
+    function toggleStarMenu(e) {
+        e.stopPropagation();
+        document.getElementById('starMenu').classList.toggle('hidden');
+    }
+    document.addEventListener('click', e => {
+        const menu = document.getElementById('starMenu');
+        if (menu && !menu.contains(e.target) && e.target !== document.getElementById('starBtn'))
+            menu.classList.add('hidden');
+    });
 
 </script>
 </body>

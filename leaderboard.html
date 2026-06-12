@@ -81,7 +81,7 @@
         }
 
         /* ── Header ── */
-        .header { text-align: center; padding: 48px 0 20px; }
+        .header { text-align: center; padding: 16px 0 10px; }
 
         .header h1 {
             font-family: 'Poppins', sans-serif;
@@ -105,7 +105,7 @@
         .mc-divider {
             height: 1px;
             background: linear-gradient(90deg, transparent, rgba(127,196,255,0.3), transparent);
-            margin: 24px 0;
+            margin: 10px 0;
         }
 
         /* ── Fun Fact Bar ── */
@@ -114,7 +114,7 @@
             border: 1.5px solid #66be3e;
             border-left: 4px solid #0D2B45;
             border-radius: var(--r-xl);
-            padding: 10px 18px;
+            padding: 16px 18px;
             margin-bottom: 16px;
             display: flex;
             align-items: center;
@@ -167,67 +167,22 @@
         }
 
         /* ── Search ── */
-        /* ── Two-column layout ── */
-        .split-layout {
-            display: flex;
-            gap: 24px;
-            flex: 1;
-            min-height: 0;
-            overflow: hidden;
-        }
-
         .leaderboard-side {
             flex: 1;
-            min-width: 0;
+            min-height: 0;
             overflow-y: auto;
-            padding-right: 4px;
-        }
-
-        .image-side {
-            width: 320px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-            overflow: hidden;
-        }
-
-        .image-label {
-            font-size: 0.82rem;
-            font-weight: 800;
-            letter-spacing: 0.14em;
-            text-transform: uppercase;
-            color: rgba(255, 255, 255, 0.7);
-            margin-bottom: 2px;
-            text-align: center;
-        }
-
-        .image-window {
-            background: #FFFFFF;
-            border: 1px solid #DCE3E6;
-            border-radius: 1.5rem;
-            box-shadow: 0 10px 30px rgba(13,43,69,0.10);
-            overflow: hidden;
-        }
-
-        .image-window img {
-            width: 100%;
-            height: auto;
-            display: block;
         }
 
         @media (max-width: 768px) {
             body { height: auto; overflow: auto; }
             .container { height: auto; overflow: visible; }
-            .split-layout { flex-direction: column; overflow: visible; }
             .leaderboard-side { overflow-y: visible; }
-            .image-side { width: 100%; }
         }
 
         .search-wrap {
             display: flex;
             gap: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 10px;
         }
 
         .search-wrap input {
@@ -292,14 +247,14 @@
         }
 
         th {
-            padding: 16px 20px;
+            padding: 7px 14px;
             position: sticky;
             top: 0;
             background: #0F4B79;
             z-index: 10;
             box-shadow: 0 1px 0 rgba(255,255,255,0.15);
             text-align: left;
-            font-size: 0.72rem;
+            font-size: 0.65rem;
             font-weight: 700;
             color: rgba(255,255,255,0.75);
             text-transform: uppercase;
@@ -307,9 +262,9 @@
         }
 
         td {
-            padding: 14px 20px;
+            padding: 4px 14px;
             border-bottom: 1px solid rgba(255,255,255,0.1);
-            font-size: 1rem;
+            font-size: 0.82rem;
             color: #FFFFFF;
         }
 
@@ -323,11 +278,11 @@
         }
 
         /* rank */
-        .rank { text-align: center; width: 72px; font-size: 1.3rem; }
+        .rank { text-align: center; width: 48px; font-size: 0.95rem; }
         .rank-1 { color: #FBBF24; filter: drop-shadow(0 0 8px rgba(251,191,36,0.5)); animation: goldBounce 1.5s ease-in-out infinite; }
         .rank-2 { color: #CBD5E1; }
         .rank-3 { color: #D97706; }
-        .rank-num { font-family: 'Poppins', sans-serif; font-size: 0.85rem; font-weight: 700; color: rgba(255,255,255,0.5); }
+        .rank-num { font-family: 'Poppins', sans-serif; font-size: 0.75rem; font-weight: 700; color: rgba(255,255,255,0.5); }
 
         @keyframes goldBounce {
             0%,100% { transform: translateY(0); }
@@ -337,9 +292,9 @@
         /* badges */
         .badge {
             display: inline-block;
-            padding: 7px 20px;
-            border-radius: 8px;
-            font-size: 0.95rem;
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.78rem;
             font-weight: 700;
             white-space: nowrap;
         }
@@ -545,7 +500,6 @@
 <div class="container">
     <div class="header">
         <h1>⛏ CodeCoins ⛏</h1>
-        <div class="subtitle">Player Leaderboard</div>
     </div>
 
     <div class="mc-divider"></div>
@@ -555,40 +509,28 @@
         <span class="fun-fact-text" id="funFactText"></span>
     </div>
 
-    <div class="split-layout">
-        <div class="leaderboard-side">
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th style="text-align:center">Rank</th>
-                            <th>Player Name</th>
-                            <th>💰 Coins</th>
-                            <th>⬆ Total Earned</th>
-                            <th>⬇ Total Redeemed</th>
-                        </tr>
-                    </thead>
-                    <tbody id="leaderboardBody"></tbody>
-                </table>
-            </div>
-        </div>
+    <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Search player name..." oninput="renderLeaderboard()">
+        <button class="btn btn-primary" onclick="renderLeaderboard()">Search</button>
+    </div>
 
-        <div class="image-side">
-            <div class="search-wrap">
-                <input type="text" id="searchInput" placeholder="Search player name..." oninput="renderLeaderboard()">
-                <button class="btn btn-primary" onclick="renderLeaderboard()">Search</button>
-            </div>
-
-            <div>
-                <div class="image-label">Featured Background</div>
-                <div class="image-window">
-                    <img src="Assets/BackgroundAssets/MahadAreeb1.png" alt="CodeCoins">
-                </div>
-            </div>
+    <div class="leaderboard-side">
+        <div class="table-wrap">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="text-align:center">Rank</th>
+                        <th>Player Name</th>
+                        <th>💰 Coins</th>
+                        <th>⬆ Total Earned</th>
+                        <th>⬇ Total Redeemed</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboardBody"></tbody>
+            </table>
         </div>
     </div>
 
-    <div class="footer">Keep mining those CodeCoins!</div>
 </div>
 
 <script>
@@ -605,9 +547,7 @@
         } catch (_) {}
         return ['Assets/FloatingIconAssets/Mahad1.png', 'Assets/FloatingIconAssets/Mahad2.png'];
     }
-    const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQAJRBdnj_AmnaQttasDtUlTHoEzywKUZXn5mRyTll5FGOrpwZg5u6GKO-rrDJ_ihEihKO_43xV3vlJ/pub?output=csv';
-
-    let sheetRows = [];
+    let leaderRows = [];
 
     async function createFloaters() {
         const icons = await loadFloatIcons();
@@ -628,34 +568,33 @@
         }
     }
 
-    function parseCSV(text) {
-        const lines = text.trim().split('\n');
-        return lines.slice(1).map(line => {
-            const cols = [];
-            let cur = '', inQ = false;
-            for (const c of line) {
-                if (c === '"') { inQ = !inQ; continue; }
-                if (c === ',' && !inQ) { cols.push(cur.trim()); cur = ''; continue; }
-                cur += c;
-            }
-            cols.push(cur.trim());
-            return cols;
-        }).filter(cols => cols.length >= 5 && cols[1]);
-    }
-
     async function fetchLeaderboard() {
         document.getElementById('leaderboardBody').innerHTML =
             `<tr><td colspan="5" class="no-data">Loading leaderboard...</td></tr>`;
         try {
-            const res  = await fetch(SHEET_CSV);
-            const text = await res.text();
-            sheetRows  = parseCSV(text).map(cols => ({
-                rank:     parseInt(cols[0].replace('#', '')) || 0,
-                name:     cols[1],
-                current:  parseInt(cols[2]) || 0,
-                earned:   parseInt(cols[3]) || 0,
-                redeemed: parseInt(cols[4]) || 0,
-            }));
+            const [transactions, ninjas] = await Promise.all([
+                fetch('/api/transactions').then(r => r.json()),
+                fetch('/api/ninjas?activeOnly=1').then(r => r.json()),
+            ]);
+            const activeNames = new Set(
+                ninjas
+                    .filter(n => (n.status || 'Active') === 'Active')
+                    .map(n => (n.shortName || '').trim().toLowerCase())
+                    .filter(Boolean)
+            );
+            const map = {};
+            transactions.forEach(t => {
+                const name = t.ninja || t['Ninja Nick Name'] || t['Ninja Name'] || '';
+                if (!name) return;
+                if (!activeNames.has(name.trim().toLowerCase())) return;
+                if (!map[name]) map[name] = { name, earned: 0, redeemed: 0 };
+                map[name].earned   += parseInt(t.pointsEarned   || t['Points Earned'])   || 0;
+                map[name].redeemed += parseInt(t.pointsRedeemed || t['Points Redeemed']) || 0;
+            });
+            leaderRows = Object.values(map)
+                .map(r => ({ ...r, coins: r.earned - r.redeemed }))
+                .sort((a, b) => b.coins - a.coins)
+                .map((r, i) => ({ ...r, rank: i + 1 }));
             renderLeaderboard();
         } catch {
             document.getElementById('leaderboardBody').innerHTML =
@@ -668,12 +607,12 @@
         const tbody = document.getElementById('leaderboardBody');
         tbody.innerHTML = '';
 
-        if (!sheetRows.length) {
+        if (!leaderRows.length) {
             tbody.innerHTML = `<tr><td colspan="5" class="no-data">No players found...</td></tr>`;
             return;
         }
 
-        sheetRows.forEach(r => {
+        leaderRows.forEach(r => {
             const isHit = query && r.name.toLowerCase().includes(query);
             const rankDisplay =
                 r.rank === 1 ? `<span class="rank rank-1">🥇</span>` :
@@ -683,10 +622,10 @@
             tbody.insertAdjacentHTML('beforeend', `
                 <tr class="${isHit ? 'search-hit' : ''}">
                     <td style="text-align:center">${rankDisplay}</td>
-                    <td style="font-size:21px;text-shadow:1px 1px #000">${r.name}</td>
-                    <td><span class="badge badge-current">💰 ${r.current}</span></td>
-                    <td><span class="badge badge-earned"><span class="arr">⬆</span> ${r.earned}</span></td>
-                    <td><span class="badge badge-redeemed"><span class="arr">⬇</span> ${r.redeemed}</span></td>
+                    <td style="font-size:0.85rem;text-shadow:1px 1px #000">${r.name}</td>
+                    <td><span class="badge badge-current">${r.coins < 0 ? '-' : '💰 ' + r.coins}</span></td>
+                    <td><span class="badge badge-earned">${r.coins < 0 ? '-' : '<span class="arr">⬆</span> ' + r.earned}</span></td>
+                    <td><span class="badge badge-redeemed">${r.coins < 0 ? '-' : '<span class="arr">⬇</span> ' + r.redeemed}</span></td>
                 </tr>`);
         });
 
@@ -694,7 +633,6 @@
             const firstHit = tbody.querySelector('.search-hit');
             if (firstHit) firstHit.scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
-
     }
 
     createFloaters();

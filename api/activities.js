@@ -14,7 +14,7 @@ module.exports = async function(req, res) {
     if (req.method === 'OPTIONS') return res.status(200).end();
     try {
         const db  = await getDb();
-        const col = db.collection('activitiesList');
+        const col = db.collection('activityList');
 
         if (req.method === 'GET') {
             const docs = await col.find({}).sort({ name: 1 }).toArray();
