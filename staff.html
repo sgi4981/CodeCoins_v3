@@ -1004,20 +1004,13 @@
 
         computeAllPlayers();
 
-        // Default filter: last 2 days of actual data
-        const allDates = [
-            ...sheetTransactions.map(t => toISODate(t.date)),
-            ...mongoTransactions.map(t => toISODate(t.date)),
-        ].filter(Boolean);
-
-        if (allDates.length) {
-            const maxDate   = allDates.reduce((a, b) => a > b ? a : b);
-            const [y, m, d] = maxDate.split('-').map(Number);
-            const fromObj   = new Date(y, m - 1, d - 2);
-            const fmt       = dt => dt.toISOString().split('T')[0];
-            document.getElementById('filterTo').value   = maxDate;
-            document.getElementById('filterFrom').value = fmt(fromObj);
-        }
+        // Default filter: last 7 days from today
+        const today   = new Date();
+        const fmt     = dt => dt.toISOString().split('T')[0];
+        const from7   = new Date(today);
+        from7.setDate(today.getDate() - 6);
+        document.getElementById('filterTo').value   = fmt(today);
+        document.getElementById('filterFrom').value = fmt(from7);
 
         populateDropdowns();
         renderTransactions();

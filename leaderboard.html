@@ -576,20 +576,25 @@
                 fetch('/api/transactions').then(r => r.json()),
                 fetch('/api/ninjas?activeOnly=1').then(r => r.json()),
             ]);
-            const activeNames = new Set(
-                ninjas
-                    .filter(n => (n.status || 'Active') === 'Active')
-                    .map(n => (n.shortName || '').trim().toLowerCase())
-                    .filter(Boolean)
-            );
+            // Map both shortName and fullName → canonical fullName for active ninjas
+            const ninjaCanonical = {};
+            ninjas
+                .filter(n => (n.status || 'Active') === 'Active')
+                .forEach(n => {
+                    const canonical = (n.fullName || n.shortName || '').trim();
+                    if (!canonical) return;
+                    if (n.shortName) ninjaCanonical[n.shortName.trim().toLowerCase()] = canonical;
+                    if (n.fullName)  ninjaCanonical[n.fullName.trim().toLowerCase()]  = canonical;
+                });
             const map = {};
             transactions.forEach(t => {
-                const name = t.ninja || t['Ninja Nick Name'] || t['Ninja Name'] || '';
-                if (!name) return;
-                if (!activeNames.has(name.trim().toLowerCase())) return;
-                if (!map[name]) map[name] = { name, earned: 0, redeemed: 0 };
-                map[name].earned   += parseInt(t.pointsEarned   || t['Points Earned'])   || 0;
-                map[name].redeemed += parseInt(t.pointsRedeemed || t['Points Redeemed']) || 0;
+                const rawName = t.ninja || t['Ninja Nick Name'] || t['Ninja Name'] || '';
+                if (!rawName) return;
+                const canonical = ninjaCanonical[rawName.trim().toLowerCase()];
+                if (!canonical) return;
+                if (!map[canonical]) map[canonical] = { name: canonical, earned: 0, redeemed: 0 };
+                map[canonical].earned   += parseInt(t.pointsEarned   || t['Points Earned'])   || 0;
+                map[canonical].redeemed += parseInt(t.pointsRedeemed || t['Points Redeemed']) || 0;
             });
             leaderRows = Object.values(map)
                 .map(r => ({ ...r, coins: r.earned - r.redeemed }))
@@ -643,37 +648,34 @@
         const facts = [
             "The first computer bug was an actual bug — a moth found trapped in a Harvard Mark II computer in 1947.",
             "Python was named after Monty Python's Flying Circus, not the snake.",
-            "The first programming language was created by Ada Lovelace in the 1840s — over 100 years before computers existed.",
             "There are over 700 programming languages in existence today.",
-            "The average programmer writes around 10–12 lines of production code per day.",
             "JavaScript was created in just 10 days by Brendan Eich in 1995.",
-            "About 70% of all coding errors are made by tired programmers.",
             "The term 'debugging' became popular after Grace Hopper removed that moth from the Mark II.",
             "HTML is not technically a programming language — it's a markup language.",
             "The first computer game, Spacewar!, was created in 1962 at MIT.",
             "Linux powers over 96% of the world's top 1 million web servers.",
             "Git was created by Linus Torvalds in just two weeks in 2005.",
             "A typical smartphone today has more computing power than all of NASA had in 1969.",
-            "The QWERTY keyboard layout was designed to slow typists down to prevent typewriter jams.",
             "Stack Overflow is visited by over 50 million developers every month.",
             "The 'Hello, World!' program dates back to a 1978 book on the C programming language.",
             "Binary code uses only two digits — 0 and 1 — to represent all data.",
             "The word 'pixel' is a combination of 'picture' and 'element'.",
-            "Coding was once considered a clerical job, similar to typing.",
-            "Amazon deploys new code every 11.7 seconds on average.",
             "The first 1GB hard drive, released in 1980, weighed over 500 pounds and cost $40,000.",
             "An estimated 4 billion people use software you didn't realize was code — like traffic lights.",
             "Over 90% of the world's currency exists only as digital data, not physical money.",
             "The @ symbol used in email addresses dates back to medieval accounting.",
             "NASA's Apollo 11 guidance computer had less memory than a modern greeting card.",
             "The world's first website, created by Tim Berners-Lee in 1991, is still online.",
+            "Google's Founders Used Python from the Start.",
             "Rubber duck debugging — explaining your code to a rubber duck — actually works.",
             "A computer would need to run for thousands of years to crack 256-bit encryption.",
             "The first computer mouse was made of wood.",
+            "ENIAC Was Operated by Six Women in 1945 during World War II.",
             "Coding is now a required subject in schools in over 20 countries worldwide.",
             "The word 'computer' originally referred to a person who performed calculations.",
-            "Wi-Fi doesn't actually stand for 'Wireless Fidelity' — it's just a brand name.",
             "There are more lines of code in a modern car than in a Boeing 787 aircraft.",
+            "CAPTCHA Tests, which helps distinguish humans from computers, are Based on the Turing Test."
+            "The World's First Website 'http://info.cern.ch' Still Exists.",
             "The '#' symbol in programming is called an 'octothorpe'.",
             "Google's first ever server was built with LEGO bricks.",
         ];
