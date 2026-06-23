@@ -760,28 +760,6 @@
         }).filter(cols => cols.length >= 3 && cols[2]);
     }
 
-    async function fetchSheetData() {
-        try {
-            const res  = await fetch(SHEET_CSV);
-            const text = await res.text();
-            const rows = parseCSV(text);
-            sheetTransactions = rows.map(cols => ({
-                timestamp:       cols[0] || '',
-                ninja:           cols[2] || '',
-                date:            cols[3] || '',
-                sensei:          cols[4] || '',
-                activity:        cols[5] || '',
-                pointsEarned:    parseInt(cols[6])  || 0,
-                activityDetails: cols[7] || '',
-                pointsRedeemed:  parseInt(cols[8])  || 0,
-                itemBought:      cols[9] || '',
-            }));
-        } catch {
-            toast('Could not load data from spreadsheet.');
-            sheetTransactions = [];
-        }
-    }
-
     // ── UI helpers ───────────────────────────────────────────────────────────
     function toast(msg) {
         const t = document.getElementById('toast');
@@ -995,7 +973,6 @@
         document.getElementById('txStudent').innerHTML = '<option value="">Loading...</option>';
 
         await Promise.all([
-            fetchSheetData(),
             loadMongoTransactions(),
             loadNinjas(),
             loadSenseis(),
