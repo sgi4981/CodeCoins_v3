@@ -404,6 +404,32 @@
             color: #AAB4BC;
             font-size: 0.85rem;
         }
+
+        /* ── Transaction table ── */
+        .tx-table-wrap {
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            overflow-x: auto;
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #EEF2F3; border-bottom: 1px solid #DCE3E6; }
+        th { padding: 10px 12px; text-align: left; font-size: 0.68rem; font-weight: 700; color: #64748B; text-transform: uppercase; letter-spacing: 0.08em; white-space: nowrap; }
+        td { padding: 9px 12px; font-size: 0.78rem; border-bottom: 1px solid #EEF2F3; color: #334155; white-space: nowrap; }
+        tr:last-child td { border-bottom: none; }
+        tbody tr { transition: background 0.15s; }
+        tbody tr:hover { background: #F6F8F8; }
+        .pts-earn   { color: #0C8A6D; font-weight: 700; }
+        .pts-redeem { color: #DC2626; font-weight: 700; }
+
+        .filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+        .filter-bar select, .filter-bar input[type="date"] {
+            padding: 9px 14px; background: #FFFFFF; border: 1px solid #DCE3E6; border-radius: var(--r-xl);
+            color: #1E293B; font-family: 'Nunito Sans', sans-serif; font-size: 0.9rem; outline: none; transition: border-color 0.2s;
+        }
+        .filter-bar select:focus, .filter-bar input[type="date"]:focus { border-color: var(--accent-500); }
+        .filter-label { font-size: 0.72rem; font-weight: 700; color: var(--neutral-400); text-transform: uppercase; letter-spacing: 0.06em; white-space: nowrap; align-self: center; }
     </style>
 </head>
 <body>
@@ -449,6 +475,8 @@
             <button class="tab-btn active" onclick="switchTab('students', this)">🥷 Ninjas</button>
             <button class="tab-btn" onclick="switchTab('senseis', this)">🥋 Senseis</button>
             <button class="tab-btn" onclick="switchTab('activities', this)">⚡ Activities</button>
+            <button class="tab-btn" onclick="switchTab('coinsdata', this)">💰 CodeCoinsData</button>
+            <button class="tab-btn" onclick="switchTab('leaderboard', this)">🏆 Leaderboard</button>
         </div>
 
         <!-- Ninjas -->
@@ -536,6 +564,76 @@
             </div>
         </div>
 
+        <!-- CodeCoinsData -->
+        <div id="tab-coinsdata" class="tab-panel">
+            <div class="card">
+                <h3>Transactions</h3>
+                <div class="filter-bar">
+                    <span class="filter-label">From</span>
+                    <input type="date" id="cdFilterFrom" onchange="renderCoinsData()">
+                    <span class="filter-label">To</span>
+                    <input type="date" id="cdFilterTo" onchange="renderCoinsData()">
+                    <select id="cdFilterNinja" onchange="renderCoinsData()">
+                        <option value="">All Ninjas</option>
+                    </select>
+                    <button class="btn btn-primary" onclick="refreshCoinsData()" style="padding:9px 16px;font-size:0.85rem">Refresh</button>
+                    <button class="btn btn-primary" onclick="clearCdFilters()" style="padding:9px 16px;font-size:0.85rem">Clear</button>
+                </div>
+                <div style="display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap">
+                    <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#F0FDF8;border:1px solid rgba(18,197,154,0.3);border-radius:var(--r-xl)">
+                        <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#0FAE88">Total Earned</span>
+                        <span id="cdSumEarned" style="font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:700;color:#0C8A6D">0</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:10px;padding:12px 20px;background:#FFF5F5;border:1px solid rgba(239,68,68,0.25);border-radius:var(--r-xl)">
+                        <span style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;color:#DC2626">Total Redeemed</span>
+                        <span id="cdSumRedeemed" style="font-family:'Poppins',sans-serif;font-size:1.2rem;font-weight:700;color:#DC2626">0</span>
+                    </div>
+                </div>
+                <div class="tx-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Ninja</th>
+                                <th>Pts Earned</th>
+                                <th>Pts Redeemed</th>
+                                <th>Activity</th>
+                                <th>Item Bought</th>
+                                <th>Timestamp</th>
+                                <th>Sensei</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cdTxBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Leaderboard -->
+        <div id="tab-leaderboard" class="tab-panel">
+            <div class="card">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+                    <h3 style="margin-bottom:0">All Ninjas Leaderboard</h3>
+                    <button class="btn btn-primary" onclick="refreshAdminLeaderboard()" style="padding:9px 16px;font-size:0.85rem">Refresh</button>
+                </div>
+                <div class="tx-table-wrap">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="text-align:center">Rank</th>
+                                <th>Ninja</th>
+                                <th>💰 Coins</th>
+                                <th>Total Earned</th>
+                                <th>Total Redeemed</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminLbBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <div class="footer">Keep the data clean, Sensei!</div>
     </div>
 </div>
@@ -598,7 +696,9 @@
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
         document.getElementById('tab-' + name).classList.add('active');
         btn.classList.add('active');
-        renderAll();
+        if (name === 'coinsdata')   refreshCoinsData();
+        else if (name === 'leaderboard') refreshAdminLeaderboard();
+        else renderAll();
     }
 
     async function renderAll() {
@@ -862,6 +962,138 @@
             toast('Activity removed.');
             renderActivities();
         } catch { toast('Error removing activity!'); }
+    }
+
+    // ── CodeCoinsData & Leaderboard state ───────────────────────────────────
+    let transactions = [];
+
+    async function loadTransactions() {
+        try { transactions = await api('GET', '/api/transactions'); } catch { transactions = []; }
+    }
+
+    function toISODate(str) {
+        if (!str) return '';
+        if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+        const p = str.split('/');
+        if (p.length === 3) return `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
+        return '';
+    }
+
+    function fmtDate(str) {
+        const iso = toISODate(str);
+        if (!iso) return str;
+        const [y, m, d] = iso.split('-');
+        return `${parseInt(m)}/${parseInt(d)}/${y}`;
+    }
+
+    // ── CodeCoinsData tab ────────────────────────────────────────────────────
+    async function refreshCoinsData() {
+        await loadTransactions();
+        const names = [...new Set(transactions.map(t => t.ninja).filter(Boolean))].sort();
+        const sel   = document.getElementById('cdFilterNinja');
+        const prev  = sel.value;
+        sel.innerHTML = '<option value="">All Ninjas</option>' +
+            names.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
+        if (prev) sel.value = prev;
+        renderCoinsData();
+    }
+
+    function clearCdFilters() {
+        document.getElementById('cdFilterFrom').value  = '';
+        document.getElementById('cdFilterTo').value    = '';
+        document.getElementById('cdFilterNinja').value = '';
+        renderCoinsData();
+    }
+
+    function renderCoinsData() {
+        const filterNinja = document.getElementById('cdFilterNinja').value;
+        const filterFrom  = document.getElementById('cdFilterFrom').value;
+        const filterTo    = document.getElementById('cdFilterTo').value;
+
+        const rows = [...transactions].sort((a, b) =>
+            (toISODate(b.date) || '').localeCompare(toISODate(a.date) || '')
+        ).filter(t => {
+            if (filterNinja && t.ninja !== filterNinja) return false;
+            const iso = toISODate(t.date);
+            if (filterFrom && iso && iso < filterFrom) return false;
+            if (filterTo   && iso && iso > filterTo)   return false;
+            return true;
+        });
+
+        document.getElementById('cdSumEarned').textContent   = rows.reduce((s, t) => s + (t.pointsEarned   || 0), 0);
+        document.getElementById('cdSumRedeemed').textContent = rows.reduce((s, t) => s + (t.pointsRedeemed || 0), 0);
+
+        const tbody = document.getElementById('cdTxBody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:28px;color:#AAB4BC;font-size:0.9rem">No transactions found...</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.slice(0, 500).map(t => `<tr>
+            <td>${fmtDate(t.date)}</td>
+            <td style="font-weight:700">${escHtml(t.ninja || '')}</td>
+            <td class="${t.pointsEarned   ? 'pts-earn'   : ''}">${t.pointsEarned   || '--'}</td>
+            <td class="${t.pointsRedeemed ? 'pts-redeem' : ''}">${t.pointsRedeemed || '--'}</td>
+            <td>${escHtml(t.activityName || t.activity || '--')}</td>
+            <td style="color:#64748B">${escHtml(t.itemBought || '--')}</td>
+            <td style="color:#64748B;font-size:0.85rem">${escHtml(t.timestamp || '')}</td>
+            <td>${escHtml(t.sensei || '')}</td>
+        </tr>`).join('');
+    }
+
+    // ── Admin Leaderboard tab ────────────────────────────────────────────────
+    async function refreshAdminLeaderboard() {
+        await Promise.all([loadNinjas(), loadTransactions()]);
+        renderAdminLeaderboard();
+    }
+
+    function renderAdminLeaderboard() {
+        // Build name → canonical (fullName) and canonical → status maps for ALL ninjas
+        const ninjaByName   = {};
+        const ninjaStatusOf = {};
+        ninjas.forEach(n => {
+            const canonical = (n.fullName || n.shortName || '').trim();
+            if (!canonical) return;
+            ninjaStatusOf[canonical] = n.status || 'Active';
+            if (n.shortName) ninjaByName[n.shortName.trim().toLowerCase()] = canonical;
+            if (n.fullName)  ninjaByName[n.fullName.trim().toLowerCase()]  = canonical;
+        });
+
+        const map = {};
+        transactions.forEach(t => {
+            const rawName  = (t.ninja || '').trim();
+            if (!rawName) return;
+            const canonical = ninjaByName[rawName.toLowerCase()] || rawName;
+            if (!map[canonical]) map[canonical] = { name: canonical, earned: 0, redeemed: 0 };
+            map[canonical].earned   += parseInt(t.pointsEarned   || 0);
+            map[canonical].redeemed += parseInt(t.pointsRedeemed || 0);
+        });
+
+        const rows = Object.values(map)
+            .map(r => ({ ...r, coins: r.earned - r.redeemed, status: ninjaStatusOf[r.name] || 'Unknown' }))
+            .sort((a, b) => b.coins - a.coins)
+            .map((r, i) => ({ ...r, rank: i + 1 }));
+
+        const tbody = document.getElementById('adminLbBody');
+        if (!rows.length) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:28px;color:#AAB4BC;font-size:0.9rem">No data found...</td></tr>';
+            return;
+        }
+        tbody.innerHTML = rows.map(r => {
+            const rankDisplay = r.rank === 1 ? '🥇' : r.rank === 2 ? '🥈' : r.rank === 3 ? '🥉' : `#${r.rank}`;
+            const statusStyle = r.status === 'Active'
+                ? 'background:rgba(18,197,154,0.15);color:#0FAE88;border:1px solid rgba(18,197,154,0.35);'
+                : r.status === 'Inactive'
+                    ? 'background:rgba(100,116,139,0.12);color:#64748B;border:1px solid rgba(100,116,139,0.3);'
+                    : 'background:rgba(251,191,36,0.15);color:#D97706;border:1px solid rgba(251,191,36,0.3);';
+            return `<tr>
+                <td style="text-align:center;font-weight:700">${rankDisplay}</td>
+                <td style="font-weight:700">${escHtml(r.name)}</td>
+                <td style="font-family:'Poppins',sans-serif;font-weight:700;color:#156EB5">${r.coins}</td>
+                <td class="pts-earn">+${r.earned}</td>
+                <td class="pts-redeem">-${r.redeemed}</td>
+                <td><span style="padding:3px 10px;border-radius:6px;font-size:0.78rem;font-weight:700;${statusStyle}">${escHtml(r.status)}</span></td>
+            </tr>`;
+        }).join('');
     }
 
     function toggleStarMenu(e) {
