@@ -708,30 +708,40 @@
         return `${parseInt(m)}/${parseInt(d)}/${y}`;
     }
 
-    // ── Normalise a MongoDB transaction to match the sheet row shape ─────────
+    // ── Normalise a MongoDB transaction (handles both old and new field names) ─
     function normMongo(t) {
         return {
-            timestamp:       t.timestamp       || '',
-            ninja:           t.ninja           || '',
-            date:            t.date            || '',
-            sensei:          t.sensei          || '',
-            activity:        t.activityName    || '',
-            pointsEarned:    t.pointsEarned    || 0,
-            activityDetails: t.activityDetails || '',
-            pointsRedeemed:  t.pointsRedeemed  || 0,
-            itemBought:      t.itemBought      || '',
+            timestamp:       t.timestamp       || t['Timestamp']         || '',
+            ninja:           t.ninja           || t['Ninja Name']        || t['Ninja Nick Name'] || '',
+            date:            t.date            || t['Date']              || '',
+            sensei:          t.sensei          || t['Sensei']            || '',
+            activity:        t.activityName    || t['Activity']          || '',
+            pointsEarned:    parseInt(t.pointsEarned  ?? t['Points Earned'])  || 0,
+            activityDetails: t.activityDetails || t['Activity Details']  || '',
+            pointsRedeemed:  parseInt(t.pointsRedeemed ?? t['Points Redeemed']) || 0,
+            itemBought:      t.itemBought      || t['Item Bought']       || '',
         };
     }
 
-    // ── Rebuild player totals from all sources ───────────────────────────────
+    // ── Rebuild player totals from all transactions ──────────────────────────
     function computeAllPlayers() {
-        const allTx = [...sheetTransactions, ...mongoTransactions.map(normMongo)];
-        const map   = {};
-        allTx.forEach(t => {
-            if (!t.ninja) return;
-            if (!map[t.ninja]) map[t.ninja] = { name: t.ninja, earned: 0, redeemed: 0 };
-            map[t.ninja].earned   += t.pointsEarned   || 0;
-            map[t.ninja].redeemed += t.pointsRedeemed || 0;
+        // Map both fullName and shortName → canonical fullName
+        const ninjaCanonical = {};
+        ninjas.forEach(n => {
+            const canonical = (n.fullName || n.shortName || '').trim();
+            if (!canonical) return;
+            if (n.shortName) ninjaCanonical[n.shortName.trim().toLowerCase()] = canonical;
+            if (n.fullName)  ninjaCanonical[n.fullName.trim().toLowerCase()]  = canonical;
+        });
+
+        const map = {};
+        mongoTransactions.forEach(t => {
+            const rawName = (t.ninja || t['Ninja Name'] || t['Ninja Nick Name'] || '').trim();
+            if (!rawName) return;
+            const canonical = ninjaCanonical[rawName.toLowerCase()] || rawName;
+            if (!map[canonical]) map[canonical] = { name: canonical, earned: 0, redeemed: 0 };
+            map[canonical].earned   += parseInt(t.pointsEarned  ?? t['Points Earned'])  || 0;
+            map[canonical].redeemed += parseInt(t.pointsRedeemed ?? t['Points Redeemed']) || 0;
         });
         allPlayers = Object.values(map)
             .map(p => ({ name: p.name, earned: p.earned, redeemed: p.redeemed, current: p.earned - p.redeemed }))
