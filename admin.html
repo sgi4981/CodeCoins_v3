@@ -971,6 +971,21 @@
         try { transactions = await api('GET', '/api/transactions'); } catch { transactions = []; }
     }
 
+    // Normalize old-format ("Ninja Name", "Points Earned") and new-format ("ninja", "pointsEarned") docs
+    function normTx(t) {
+        return {
+            timestamp:      t.timestamp      || t['Timestamp']        || '',
+            ninja:          t.ninja          || t['Ninja Name']       || t['Ninja Nick Name'] || '',
+            date:           t.date           || t['Date']             || '',
+            sensei:         t.sensei         || t['Sensei']           || '',
+            activityName:   t.activityName   || t['Activity']         || '',
+            pointsEarned:   parseInt(t.pointsEarned  ?? t['Points Earned'])  || 0,
+            activityDetails: t.activityDetails || t['Activity Details'] || '',
+            pointsRedeemed: parseInt(t.pointsRedeemed ?? t['Points Redeemed']) || 0,
+            itemBought:     t.itemBought     || t['Item Bought']      || '',
+        };
+    }
+
     function toISODate(str) {
         if (!str) return '';
         if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
@@ -989,9 +1004,10 @@
     // ── CodeCoinsData tab ────────────────────────────────────────────────────
     async function refreshCoinsData() {
         await loadTransactions();
-        const names = [...new Set(transactions.map(t => t.ninja).filter(Boolean))].sort();
-        const sel   = document.getElementById('cdFilterNinja');
-        const prev  = sel.value;
+        const normed = transactions.map(normTx);
+        const names  = [...new Set(normed.map(t => t.ninja).filter(Boolean))].sort();
+        const sel    = document.getElementById('cdFilterNinja');
+        const prev   = sel.value;
         sel.innerHTML = '<option value="">All Ninjas</option>' +
             names.map(n => `<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
         if (prev) sel.value = prev;
@@ -1010,7 +1026,7 @@
         const filterFrom  = document.getElementById('cdFilterFrom').value;
         const filterTo    = document.getElementById('cdFilterTo').value;
 
-        const rows = [...transactions].sort((a, b) =>
+        const rows = transactions.map(normTx).sort((a, b) =>
             (toISODate(b.date) || '').localeCompare(toISODate(a.date) || '')
         ).filter(t => {
             if (filterNinja && t.ninja !== filterNinja) return false;
@@ -1030,13 +1046,13 @@
         }
         tbody.innerHTML = rows.slice(0, 500).map(t => `<tr>
             <td>${fmtDate(t.date)}</td>
-            <td style="font-weight:700">${escHtml(t.ninja || '')}</td>
+            <td style="font-weight:700">${escHtml(t.ninja)}</td>
             <td class="${t.pointsEarned   ? 'pts-earn'   : ''}">${t.pointsEarned   || '--'}</td>
             <td class="${t.pointsRedeemed ? 'pts-redeem' : ''}">${t.pointsRedeemed || '--'}</td>
-            <td>${escHtml(t.activityName || t.activity || '--')}</td>
+            <td>${escHtml(t.activityName || '--')}</td>
             <td style="color:#64748B">${escHtml(t.itemBought || '--')}</td>
-            <td style="color:#64748B;font-size:0.85rem">${escHtml(t.timestamp || '')}</td>
-            <td>${escHtml(t.sensei || '')}</td>
+            <td style="color:#64748B;font-size:0.85rem">${escHtml(t.timestamp)}</td>
+            <td>${escHtml(t.sensei)}</td>
         </tr>`).join('');
     }
 
@@ -1059,13 +1075,13 @@
         });
 
         const map = {};
-        transactions.forEach(t => {
-            const rawName  = (t.ninja || '').trim();
+        transactions.map(normTx).forEach(t => {
+            const rawName = t.ninja.trim();
             if (!rawName) return;
             const canonical = ninjaByName[rawName.toLowerCase()] || rawName;
             if (!map[canonical]) map[canonical] = { name: canonical, earned: 0, redeemed: 0 };
-            map[canonical].earned   += parseInt(t.pointsEarned   || 0);
-            map[canonical].redeemed += parseInt(t.pointsRedeemed || 0);
+            map[canonical].earned   += t.pointsEarned;
+            map[canonical].redeemed += t.pointsRedeemed;
         });
 
         const rows = Object.values(map)

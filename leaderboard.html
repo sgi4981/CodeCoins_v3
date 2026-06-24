@@ -573,8 +573,8 @@
             `<tr><td colspan="5" class="no-data">Loading leaderboard...</td></tr>`;
         try {
             const [transactions, ninjas] = await Promise.all([
-                fetch('/api/transactions').then(r => r.json()),
-                fetch('/api/ninjas?activeOnly=1').then(r => r.json()),
+                fetch('/api/transactions', { cache: 'no-cache' }).then(r => r.json()),
+                fetch('/api/ninjas?activeOnly=1', { cache: 'no-cache' }).then(r => r.json()),
             ]);
             // Map both shortName and fullName → canonical fullName for active ninjas
             const ninjaCanonical = {};
@@ -601,9 +601,9 @@
                 .sort((a, b) => b.coins - a.coins)
                 .map((r, i) => ({ ...r, rank: i + 1 }));
             renderLeaderboard();
-        } catch {
+        } catch (err) {
             document.getElementById('leaderboardBody').innerHTML =
-                `<tr><td colspan="5" class="no-data">Could not load data. Check your connection.</td></tr>`;
+                `<tr><td colspan="5" class="no-data">Could not load data: ${err?.message || err}</td></tr>`;
         }
     }
 
@@ -674,7 +674,7 @@
             "Coding is now a required subject in schools in over 20 countries worldwide.",
             "The word 'computer' originally referred to a person who performed calculations.",
             "There are more lines of code in a modern car than in a Boeing 787 aircraft.",
-            "CAPTCHA Tests, which helps distinguish humans from computers, are Based on the Turing Test."
+            "CAPTCHA Tests, which helps distinguish humans from computers, are Based on the Turing Test.",
             "The World's First Website 'http://info.cern.ch' Still Exists.",
             "The '#' symbol in programming is called an 'octothorpe'.",
             "Google's first ever server was built with LEGO bricks.",
