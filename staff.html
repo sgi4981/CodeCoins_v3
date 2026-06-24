@@ -443,6 +443,45 @@
             align-self: center;
         }
 
+        /* ── Searchable select ── */
+        .search-select { position: relative; }
+        .ss-list {
+            display: none;
+            position: absolute;
+            top: calc(100% + 4px);
+            left: 0; right: 0;
+            background: #fff;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            box-shadow: 0 8px 24px rgba(13,43,69,0.14);
+            max-height: 220px;
+            overflow-y: auto;
+            z-index: 500;
+        }
+        .ss-option {
+            padding: 8px 14px;
+            font-size: 0.9rem;
+            color: #334155;
+            cursor: pointer;
+            transition: background 0.1s;
+        }
+        .ss-option:hover { background: #EEF2F3; }
+        .ss-empty { padding: 8px 14px; font-size: 0.85rem; color: #AAB4BC; }
+        .filter-bar .search-select { flex: 1; min-width: 150px; }
+        .filter-bar .search-select input[type="text"] {
+            width: 100%;
+            padding: 9px 14px;
+            background: #FFFFFF;
+            border: 1px solid #DCE3E6;
+            border-radius: var(--r-xl);
+            color: #1E293B;
+            font-family: 'Nunito Sans', sans-serif;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .filter-bar .search-select input[type="text"]:focus { border-color: var(--accent-500); }
+
         /* ── Toast ── */
         #toast {
             position: fixed;
@@ -544,9 +583,15 @@
                 </div>
                 <div class="form-group">
                     <label>Ninja</label>
-                    <select id="txStudent" onchange="onStudentChange()">
-                        <option value="">-- Select Ninja --</option>
-                    </select>
+                    <div class="search-select">
+                        <input type="text" id="txStudentSearch" placeholder="-- Select Ninja --"
+                               autocomplete="off"
+                               onfocus="ssOpen('txStudent')"
+                               oninput="ssInput('txStudent')"
+                               onblur="ssBlur('txStudent')">
+                        <div class="ss-list" id="txStudentList"></div>
+                        <input type="hidden" id="txStudent">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Date</label>
@@ -607,9 +652,15 @@
                 <input type="date" id="filterFrom" onchange="renderTransactions()">
                 <span class="filter-label">To</span>
                 <input type="date" id="filterTo" onchange="renderTransactions()">
-                <select id="filterStudent" onchange="renderTransactions()">
-                    <option value="">Select All</option>
-                </select>
+                <div class="search-select">
+                    <input type="text" id="filterStudentSearch" placeholder="All Ninjas"
+                           autocomplete="off"
+                           onfocus="ssOpen('filterStudent')"
+                           oninput="ssInput('filterStudent')"
+                           onblur="ssBlur('filterStudent')">
+                    <div class="ss-list" id="filterStudentList"></div>
+                    <input type="hidden" id="filterStudent">
+                </div>
                 <button class="btn btn-primary" onclick="refreshData()" style="padding:9px 16px;font-size:0.85rem">Search</button>
                 <button class="btn btn-primary" onclick="clearFilters()" style="padding:9px 16px;font-size:0.85rem">Clear Filters</button>
             </div>
@@ -770,6 +821,56 @@
         }).filter(cols => cols.length >= 3 && cols[2]);
     }
 
+    // ── Searchable select ────────────────────────────────────────────────────
+    const SS = {}; // prefix → [{value, label}]
+
+    function ssRender(prefix, term) {
+        const list = document.getElementById(prefix + 'List');
+        const data = SS[prefix] || [];
+        const q = term.trim().toLowerCase();
+        const matches = q ? data.filter(o => o.label.toLowerCase().includes(q)) : data;
+        list.innerHTML = matches.length
+            ? matches.map(o =>
+                `<div class="ss-option" data-val="${o.value.replace(/"/g,'&quot;')}" data-lbl="${o.label.replace(/"/g,'&quot;')}" onmousedown="ssPickEl(this,'${prefix}')">${o.label}</div>`
+              ).join('')
+            : '<div class="ss-empty">No matches</div>';
+    }
+
+    function ssOpen(prefix) {
+        ssRender(prefix, '');
+        document.getElementById(prefix + 'List').style.display = '';
+    }
+
+    function ssInput(prefix) {
+        const term = document.getElementById(prefix + 'Search').value;
+        ssRender(prefix, term);
+        document.getElementById(prefix + 'List').style.display = '';
+    }
+
+    function ssPickEl(el, prefix) {
+        document.getElementById(prefix).value          = el.dataset.val;
+        document.getElementById(prefix + 'Search').value = el.dataset.lbl;
+        document.getElementById(prefix + 'List').style.display = 'none';
+        if (prefix === 'txStudent')     onStudentChange();
+        if (prefix === 'filterStudent') renderTransactions();
+    }
+
+    function ssBlur(prefix) {
+        setTimeout(() => {
+            document.getElementById(prefix + 'List').style.display = 'none';
+            const val  = document.getElementById(prefix).value;
+            const data = SS[prefix] || [];
+            const opt  = data.find(o => o.value === val);
+            document.getElementById(prefix + 'Search').value = opt ? opt.label : '';
+        }, 150);
+    }
+
+    function ssClear(prefix) {
+        document.getElementById(prefix).value            = '';
+        document.getElementById(prefix + 'Search').value = '';
+        document.getElementById(prefix + 'List').style.display = 'none';
+    }
+
     // ── UI helpers ───────────────────────────────────────────────────────────
     function toast(msg) {
         const t = document.getElementById('toast');
@@ -781,15 +882,13 @@
     function populateDropdowns() {
         const type = document.querySelector('input[name="txType"]:checked').value;
 
-        const playerSel = document.getElementById('txStudent');
-        const prev = playerSel.value;
-        playerSel.innerHTML = '<option value="">-- Select Ninja --</option>' +
-            ninjas
-                .filter(n => (n.status || 'Active').toLowerCase() !== 'inactive')
-                .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''))
-                .map(n => `<option value="${n.fullName}">${n.fullName}</option>`)
-                .join('');
-        if (prev) playerSel.value = prev;
+        // Ninja searchable select
+        const prevNinja = document.getElementById('txStudent').value;
+        SS['txStudent'] = ninjas
+            .filter(n => (n.status || 'Active').toLowerCase() !== 'inactive')
+            .sort((a, b) => (a.fullName || '').localeCompare(b.fullName || ''))
+            .map(n => ({ value: n.fullName, label: n.fullName }));
+        if (!prevNinja) document.getElementById('txStudentSearch').value = '';
 
         const senseiSel = document.getElementById('txSensei');
         const prevS = senseiSel.value;
@@ -806,11 +905,9 @@
         document.getElementById('earnFields').style.display   = type === 'earn'   ? '' : 'none';
         document.getElementById('redeemFields').style.display = type === 'redeem' ? '' : 'none';
 
-        const fSel = document.getElementById('filterStudent');
-        const prevF = fSel.value;
-        fSel.innerHTML = '<option value="">Select All</option>' +
-            allPlayers.map(p => `<option value="${p.name}">${p.name}</option>`).join('');
-        if (prevF) fSel.value = prevF;
+        // Filter-bar ninja searchable select
+        SS['filterStudent'] = [{ value: '', label: 'All Ninjas' },
+            ...allPlayers.map(p => ({ value: p.name, label: p.name }))];
     }
 
     function onTypeChange() { populateDropdowns(); onActivityChange(); }
@@ -901,7 +998,7 @@
                 toast(`${txData.pointsRedeemed} coins redeemed!`);
             }
 
-            document.getElementById('txStudent').value = '';
+            ssClear('txStudent');
             document.getElementById('txSensei').value  = '';
             document.getElementById('balanceBanner').classList.remove('visible');
             document.getElementById('earn').checked = true;
@@ -960,9 +1057,9 @@
     }
 
     function clearFilters() {
-        document.getElementById('filterFrom').value    = '';
-        document.getElementById('filterTo').value      = '';
-        document.getElementById('filterStudent').value = '';
+        document.getElementById('filterFrom').value = '';
+        document.getElementById('filterTo').value   = '';
+        ssClear('filterStudent');
         renderTransactions();
     }
 
