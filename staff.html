@@ -838,13 +838,13 @@
 
     function ssOpen(prefix) {
         ssRender(prefix, '');
-        document.getElementById(prefix + 'List').style.display = '';
+        document.getElementById(prefix + 'List').style.display = 'block';
     }
 
     function ssInput(prefix) {
         const term = document.getElementById(prefix + 'Search').value;
         ssRender(prefix, term);
-        document.getElementById(prefix + 'List').style.display = '';
+        document.getElementById(prefix + 'List').style.display = 'block';
     }
 
     function ssPickEl(el, prefix) {
