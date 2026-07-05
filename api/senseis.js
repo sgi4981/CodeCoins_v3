@@ -7,9 +7,15 @@ const cors = (res) => {
     res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 };
 
+const normalizeStatus = raw => {
+    const s = (raw || '').toString().trim().toLowerCase();
+    return s === 'inactive' ? 'Inactive' : 'Active';
+};
+
 const serial = doc => ({
-    _id:  doc._id.toString(),
-    name: doc.name || doc['Sensei'] || doc['sensei'] || '',
+    _id:    doc._id.toString(),
+    name:   doc.name || doc['Sensei'] || doc['sensei'] || '',
+    status: normalizeStatus(doc.status),
 });
 
 module.exports = async function(req, res) {
@@ -27,8 +33,9 @@ module.exports = async function(req, res) {
         if (req.method === 'POST') {
             const { name } = req.body;
             if (!name) return res.status(400).json({ error: 'name required' });
-            const r = await col.insertOne({ name });
-            return res.json(serial({ _id: r.insertedId, name }));
+            const doc = { name, status: 'Active' };
+            const r = await col.insertOne(doc);
+            return res.json(serial({ _id: r.insertedId, ...doc }));
         }
 
         if (req.method === 'PUT') {

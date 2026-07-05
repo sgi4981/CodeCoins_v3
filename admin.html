@@ -530,6 +530,11 @@
                     <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
                         <input type="text" id="senseiSearch" placeholder="Search senseis..." oninput="renderSenseis()"
                                style="padding:8px 14px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;outline:none;transition:border-color .2s,box-shadow .2s">
+                        <div style="display:flex;gap:4px">
+                            <button id="senseiFilterAll"      onclick="setSenseiFilter('All')"      style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid var(--brand-500);background:var(--brand-600);color:#fff;transition:all .15s">All</button>
+                            <button id="senseiFilterActive"   onclick="setSenseiFilter('Active')"   style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid #DCE3E6;background:#fff;color:#64748B;transition:all .15s">Active</button>
+                            <button id="senseiFilterInactive" onclick="setSenseiFilter('Inactive')" style="padding:8px 14px;font-size:0.85rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;border:1px solid #DCE3E6;background:#fff;color:#64748B;transition:all .15s">Inactive</button>
+                        </div>
                     </div>
                 </div>
                 <div class="item-list" id="senseiList"></div>
@@ -665,7 +670,8 @@
     let editingNinjaId    = null;
     let editingSenseiId   = null;
     let editingActivityId = null;
-    let ninjaStatusFilter = 'All';
+    let ninjaStatusFilter  = 'All';
+    let senseiStatusFilter = 'All';
 
     function toast(msg) {
         const t = document.getElementById('toast');
@@ -819,9 +825,26 @@
     }
 
     // ── Senseis ──────────────────────────────────────────────────────────────
+    function setSenseiFilter(value) {
+        senseiStatusFilter = value;
+        ['All', 'Active', 'Inactive'].forEach(v => {
+            const btn = document.getElementById('senseiFilter' + v);
+            if (!btn) return;
+            const isActive = v === value;
+            btn.style.background  = isActive ? 'var(--brand-600)' : '#fff';
+            btn.style.color       = isActive ? '#fff' : '#64748B';
+            btn.style.borderColor = isActive ? 'var(--brand-500)' : '#DCE3E6';
+        });
+        renderSenseis();
+    }
+
     function renderSenseis() {
         const query = (document.getElementById('senseiSearch')?.value || '').trim().toLowerCase();
-        const list  = query ? senseis.filter(s => s.name.toLowerCase().includes(query)) : senseis;
+        const list  = senseis.filter(s => {
+            const matchSearch = !query || s.name.toLowerCase().includes(query);
+            const matchStatus = senseiStatusFilter === 'All' || (s.status || 'Active') === senseiStatusFilter;
+            return matchSearch && matchStatus;
+        });
         const el = document.getElementById('senseiList');
         if (!list.length) { el.innerHTML = '<div class="empty-msg">No senseis found...</div>'; return; }
         el.innerHTML = list.map(s => {
@@ -837,16 +860,34 @@
                     </div>
                 </div>`;
             }
+            const status = s.status || 'Active';
+            const isActive = status === 'Active';
+            const statusStyle = isActive
+                ? 'background:rgba(18,197,154,0.15);border:1px solid rgba(18,197,154,0.35);color:#0FAE88;'
+                : 'background:rgba(100,116,139,0.12);border:1px solid rgba(100,116,139,0.3);color:#64748B;';
             return `<div class="item-row" id="sensei-row-${s._id}">
                 <div class="item-info">
                     <span class="item-name">🥋 ${escHtml(s.name)}</span>
                 </div>
-                <div style="display:flex;gap:6px">
+                <div style="display:flex;gap:6px;align-items:center">
+                    <button onclick="toggleSenseiStatus('${s._id}')"
+                            style="padding:7px 14px;font-size:0.82rem;font-weight:700;border-radius:var(--r-xl);cursor:pointer;font-family:'Nunito Sans',sans-serif;transition:all .15s;${statusStyle}">${escHtml(status)}</button>
                     <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditSensei('${s._id}')">✎ Edit</button>
                     <button class="btn-danger" onclick="deleteSensei('${s._id}')">🗑 Remove</button>
                 </div>
             </div>`;
         }).join('');
+    }
+
+    async function toggleSenseiStatus(id) {
+        const idx = senseis.findIndex(s => s._id === id);
+        if (idx === -1) return;
+        const newStatus = (senseis[idx].status || 'Active') === 'Active' ? 'Inactive' : 'Active';
+        try {
+            await api('PUT', '/api/senseis', { _id: id, status: newStatus });
+            senseis[idx].status = newStatus;
+            renderSenseis();
+        } catch { toast('Error updating status!'); }
     }
 
     function startEditSensei(id) { editingSenseiId = id; renderSenseis(); document.getElementById('edit-sensei-' + id)?.focus(); }
