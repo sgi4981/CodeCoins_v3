@@ -581,19 +581,18 @@
                 safeJson('/api/transactions'),
                 safeJson('/api/ninjas?activeOnly=1'),
             ]);
-            // Map both fullName and shortName → canonical fullName for active ninjas
+            // Map fullName → canonical fullName for active ninjas
             const ninjaCanonical = {};
             ninjas
                 .filter(n => (n.status || 'Active') === 'Active')
                 .forEach(n => {
-                    const canonical = (n.fullName || n.shortName || '').trim();
+                    const canonical = (n.fullName || '').trim();
                     if (!canonical) return;
-                    if (n.shortName) ninjaCanonical[n.shortName.trim().toLowerCase()] = canonical;
-                    if (n.fullName)  ninjaCanonical[n.fullName.trim().toLowerCase()]  = canonical;
+                    ninjaCanonical[canonical.toLowerCase()] = canonical;
                 });
             const map = {};
             transactions.forEach(t => {
-                const rawName = t.ninja || t['Ninja Nick Name'] || t['Ninja Name'] || '';
+                const rawName = t.ninja || t['Ninja Name'] || '';
                 if (!rawName) return;
                 const canonical = ninjaCanonical[rawName.trim().toLowerCase()];
                 if (!canonical) return;
