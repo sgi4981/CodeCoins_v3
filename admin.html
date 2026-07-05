@@ -518,7 +518,7 @@
                 <h3 style="margin-bottom:8px">Add Sensei</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Sensei Name</label>
+                        <label>Sensei Name <span style="color:#EF4444">*</span></label>
                         <input type="text" id="newSenseiName" placeholder="e.g. Sensei Rivera">
                     </div>
                     <button class="btn btn-primary" onclick="addSensei()">+ Add Sensei</button>
@@ -914,6 +914,8 @@
     async function addSensei() {
         const name = document.getElementById('newSenseiName').value.trim();
         if (!name) { toast('Enter a sensei name!'); return; }
+        const dup = senseis.find(s => s.name.trim().toLowerCase() === name.toLowerCase());
+        if (dup) { toast(`Sensei "${name}" already exists!`); return; }
         try {
             const sensei = await api('POST', '/api/senseis', { name });
             senseis.push(sensei);
