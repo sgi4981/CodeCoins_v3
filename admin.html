@@ -804,6 +804,10 @@
         const fullName  = document.getElementById('newNinjaFullName').value.trim();
         const shortName = document.getElementById('newNinjaShortName').value.trim();
         if (!fullName) { toast('Enter a full name!'); return; }
+        const dupFull  = ninjas.find(n => n.fullName.trim().toLowerCase()  === fullName.toLowerCase());
+        const dupShort = shortName && ninjas.find(n => n.shortName.trim().toLowerCase() === shortName.toLowerCase());
+        if (dupFull)  { toast(`Full name "${fullName}" already exists!`); return; }
+        if (dupShort) { toast(`Short name "${shortName}" already exists!`); return; }
         try {
             const ninja = await api('POST', '/api/ninjas', { fullName, shortName, status: 'Active' });
             ninjas.push(ninja);
