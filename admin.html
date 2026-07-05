@@ -485,11 +485,11 @@
                 <h3 style="margin-bottom:8px">Add Ninja</h3>
                 <div class="form-row">
                     <div class="form-group">
-                        <label>Full Name</label>
+                        <label>Full Name <span style="color:#EF4444">*</span></label>
                         <input type="text" id="newNinjaFullName" placeholder="e.g. Alex Carter">
                     </div>
                     <div class="form-group">
-                        <label>Short Name</label>
+                        <label>Short Name <span style="color:#EF4444">*</span></label>
                         <input type="text" id="newNinjaShortName" placeholder="e.g. Alex C">
                     </div>
                     <button class="btn btn-primary" onclick="addNinja()">+ Add Ninja</button>
@@ -803,9 +803,10 @@
     async function addNinja() {
         const fullName  = document.getElementById('newNinjaFullName').value.trim();
         const shortName = document.getElementById('newNinjaShortName').value.trim();
-        if (!fullName) { toast('Enter a full name!'); return; }
+        if (!fullName)  { toast('Enter a full name!');  return; }
+        if (!shortName) { toast('Enter a short name!'); return; }
         const dupFull  = ninjas.find(n => n.fullName.trim().toLowerCase()  === fullName.toLowerCase());
-        const dupShort = shortName && ninjas.find(n => n.shortName.trim().toLowerCase() === shortName.toLowerCase());
+        const dupShort = ninjas.find(n => n.shortName.trim().toLowerCase() === shortName.toLowerCase());
         if (dupFull)  { toast(`Full name "${fullName}" already exists!`); return; }
         if (dupShort) { toast(`Short name "${shortName}" already exists!`); return; }
         try {
