@@ -572,11 +572,16 @@
         document.getElementById('leaderboardBody').innerHTML =
             `<tr><td colspan="5" class="no-data">Loading leaderboard...</td></tr>`;
         try {
+            const safeJson = async (url) => {
+                const r = await fetch(url, { cache: 'no-cache' });
+                if (!r.ok) throw new Error(`${url} returned HTTP ${r.status}`);
+                return r.json();
+            };
             const [transactions, ninjas] = await Promise.all([
-                fetch('/api/transactions', { cache: 'no-cache' }).then(r => r.json()),
-                fetch('/api/ninjas?activeOnly=1', { cache: 'no-cache' }).then(r => r.json()),
+                safeJson('/api/transactions'),
+                safeJson('/api/ninjas?activeOnly=1'),
             ]);
-            // Map both shortName and fullName → canonical fullName for active ninjas
+            // Map both fullName and shortName → canonical fullName for active ninjas
             const ninjaCanonical = {};
             ninjas
                 .filter(n => (n.status || 'Active') === 'Active')
