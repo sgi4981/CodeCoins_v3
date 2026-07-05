@@ -892,7 +892,7 @@
         const senseiSel = document.getElementById('txSensei');
         const prevS = senseiSel.value;
         senseiSel.innerHTML = '<option value="">-- Select Sensei --</option>' +
-            senseis.map(s => `<option value="${s.name}">${s.name}</option>`).join('');
+            senseis.filter(s => (s.status || 'Active') === 'Active').map(s => `<option value="${s.name}">${s.name}</option>`).join('');
         if (prevS) senseiSel.value = prevS;
 
         const actSel = document.getElementById('txActivity');
