@@ -6,7 +6,7 @@ async function getDb() {
         client = new MongoClient(process.env.MONGODB_URI);
         await client.connect();
     }
-    return client.db('codeCoinsProdDB');
+    return client.db('codeCoinsDB');
 }
 
 module.exports = { getDb };
