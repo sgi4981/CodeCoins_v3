@@ -938,14 +938,14 @@
     // ── Activities ───────────────────────────────────────────────────────────
     function renderActivities() {
         const query = (document.getElementById('activitySearch')?.value || '').trim().toLowerCase();
-        const list  = query ? activities.filter(a => a.activity.toLowerCase().includes(query)) : activities;
+        const list  = query ? activities.filter(a => a.name.toLowerCase().includes(query)) : activities;
         const el = document.getElementById('activityList');
         if (!list.length) { el.innerHTML = '<div class="empty-msg">No activities found...</div>'; return; }
         el.innerHTML = list.map(a => {
             if (a._id === editingActivityId) {
                 return `<div class="item-row" id="activity-row-${a._id}">
                     <div style="display:flex;gap:8px;flex:1;flex-wrap:wrap;align-items:center">
-                        <input id="edit-activity-name-${a._id}" value="${escHtml(a.activity)}" placeholder="Activity Name"
+                        <input id="edit-activity-name-${a._id}" value="${escHtml(a.name)}" placeholder="Activity Name"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;flex:1;min-width:180px;outline:none">
                         <input id="edit-activity-coins-${a._id}" value="${a.coins}" placeholder="Coins" type="number" min="1"
                                style="padding:8px 12px;border:1px solid #DCE3E6;border-radius:var(--r-xl);font-family:'Nunito Sans',sans-serif;font-size:0.9rem;width:90px;outline:none">
@@ -959,7 +959,7 @@
             return `<div class="item-row" id="activity-row-${a._id}">
                 <div style="display:flex;align-items:center;gap:10px;flex:1">
                     <span class="points-pill">💰 ${a.coins}</span>
-                    <div class="item-info"><span class="item-name">${escHtml(a.activity)}</span></div>
+                    <div class="item-info"><span class="item-name">${escHtml(a.name)}</span></div>
                 </div>
                 <div style="display:flex;gap:6px">
                     <button class="btn btn-primary" style="padding:7px 14px;font-size:0.82rem" onclick="startEditActivity('${a._id}')">✎ Edit</button>
