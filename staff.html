@@ -898,7 +898,7 @@
         const actSel = document.getElementById('txActivity');
         const prevA  = actSel.value;
         actSel.innerHTML = '<option value="">-- Select activity --</option>' +
-            activities.map(a => `<option value="${a._id}" data-pts="${a.coins}">${a.name} (+${a.coins})</option>`).join('');
+            activities.map(a => `<option value="${a._id}" data-pts="${a.coins}">${a.activity} (+${a.coins})</option>`).join('');
         if (prevA) actSel.value = prevA;
 
         document.getElementById('earnFields').style.display   = type === 'earn'   ? '' : 'none';
@@ -956,7 +956,7 @@
             const activity = activities.find(a => a._id === actId);
             txData = {
                 type, timestamp, ninja: playerName, date, sensei,
-                activityName:    activity?.name || '',
+                activityName:    activity?.activity || '',
                 pointsEarned:    points,
                 activityDetails,
                 pointsRedeemed:  0,
